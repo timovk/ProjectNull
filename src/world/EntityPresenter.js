@@ -180,7 +180,7 @@ export class EntityPresenter {
     const v = this.views.get(entityId);
     if (!v) return null;
     v.room = 'SECURITY_STATION'; // already inside: no exit walk
-    if (via === 'VENT') {
+    if (via === 'VENT' || via === 'HIDDEN') {
       v.phase = 'HIDDEN';
       this.parking.add(v.model);
       return null;

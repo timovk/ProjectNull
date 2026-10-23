@@ -14,15 +14,30 @@ export class LightingController {
     this.time = 0;
     this.morningColor = new THREE.Color(0xffe2b8);
     this.baseColor = new THREE.Color(0xdfe8d8);
+    this.eased = {};
   }
 
   reset() {
     this.flicker.clear();
     this.nextFlickerAt = 8;
+    this.eased = {};
+  }
+
+  /**
+   * No-startle mode eases every light change (including the power-failure
+   * blackout) over a few seconds instead of switching instantly.
+   */
+  ease(key, target, dt) {
+    if (!this.settings.get('noStartle') || this.eased[key] === undefined) {
+      this.eased[key] = target;
+      return target;
+    }
+    this.eased[key] += (target - this.eased[key]) * Math.min(1, dt * 0.8);
+    return this.eased[key];
   }
 
   flickerValue(key, time) {
-    if (this.settings.get('disableFlicker')) return 1;
+    if (this.settings.get('disableFlicker') || this.settings.get('noStartle')) return 1;
     const f = this.flicker.get(key);
     if (!f || time > f.until) return 1;
     const x = Math.sin(time * 61 + f.phase) * Math.sin(time * 23 + f.phase * 2);
@@ -77,6 +92,10 @@ export class LightingController {
       L.main.color.copy(this.baseColor);
       L.fill.color.copy(this.baseColor);
     }
+    mainI = this.ease('main', mainI, dt);
+    fillI = this.ease('fill', fillI, dt);
+    tube = this.ease('tube', tube, dt);
+    emergency = this.ease('emergency', emergency, dt);
     const fa = this.flickerValue('stationA', time);
     const fb = this.flickerValue('stationB', time);
     L.main.intensity = mainI * fa * failDim;
@@ -86,7 +105,7 @@ export class LightingController {
     L.fixtures[0].tubes.forEach((t) => t.material.color.setScalar(0.92 * tube * fa * failDim + 0.08));
     L.fixtures[1].tubes.forEach((t) => t.material.color.setScalar(0.92 * tube * fb * failDim + 0.08));
     L.monitorGlow.intensity = (sim.surveillance.operational ? 1.2 : 0.1) * failDim;
-    L.ambient.intensity = (sec.stationLights === 'EMERGENCY' ? 0.2 : sec.stationLights === 'LOW' ? 0.26 : 0.4) * (1 - failure * 0.9) + morning * 0.2;
+    L.ambient.intensity = this.ease('ambient', sec.stationLights === 'EMERGENCY' ? 0.2 : sec.stationLights === 'LOW' ? 0.26 : 0.4, dt) * (1 - failure * 0.9) + morning * 0.2;
     const shadows = this.settings.get('shadows');
     if (L.main.castShadow !== shadows) L.main.castShadow = shadows;
 
@@ -96,7 +115,7 @@ export class LightingController {
       const room = this.f.rooms[`${side}_APPROACH`];
       const lit = sec.isCorridorLit(`${side}_CORRIDOR`);
       const fl = this.flickerValue(side === 'WEST' ? 'approachW' : 'approachE', time);
-      room.lights.lamp.intensity = (powered ? 7 : 1.8) * fl * (1 - failure * 0.7) + (lit ? 1.5 : 0);
+      room.lights.lamp.intensity = this.ease(`lamp${side}`, (powered ? 7 : 1.8) + (lit ? 1.5 : 0), dt) * fl * (1 - failure * 0.7);
       room.lights.bulb.material.color.setScalar(powered ? 0.9 * fl : 0.3);
       room.lights.corridorLamp.intensity = lit ? 14 : 0;
       room.lights.corridorTube.material.color.setHex(lit ? 0xeef4ea : 0x3a3c3e);
@@ -104,10 +123,10 @@ export class LightingController {
 
     const m = this.f.lights.maintenance;
     const mf = this.flickerValue('maintenance', time);
-    m.lamp.intensity = (powered ? 18 : 3) * mf * failDim;
+    m.lamp.intensity = this.ease('maint', powered ? 18 : 3, dt) * mf * failDim;
     m.bulb.material.color.setScalar((powered ? 0.9 : 0.3) * mf);
     const e = this.f.lights.electrical;
-    e.lamp.intensity = (powered ? 16 : 3) * failDim;
+    e.lamp.intensity = this.ease('elec', powered ? 16 : 3, dt) * failDim;
     this.f.lights.pump.lamp.intensity = 2.2 * failDim;
     this.f.lights.restricted.glow.intensity = (0.6 + Math.sin(time * 0.8) * 0.25) * failDim;
   }

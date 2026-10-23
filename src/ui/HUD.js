@@ -1,5 +1,6 @@
 import { el } from './dom.js';
 import { formatGameClock } from '../core/GameClock.js';
+import { FacilityMap, markerLegend } from './FacilityMap.js';
 
 /** Minimal in-game HUD: time, power, active systems, prompt, warnings. */
 export class HUD {
@@ -14,8 +15,13 @@ export class HUD {
     this.fps = el('div', { class: 'fps' });
     this.hold = el('div', { class: 'hold', html: '<svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="19" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3"/><circle class="arc" cx="23" cy="23" r="19" fill="none" stroke="#ffb84a" stroke-width="3" stroke-dasharray="119.4" stroke-dashoffset="119.4" transform="rotate(-90 23 23)"/></svg>' });
     this.arc = this.hold.querySelector('.arc');
+    // Practice-only live map of where every subject is.
+    this.miniMap = new FacilityMap({ compact: true });
+    this.miniMap.showEntities(true);
+    this.minimap = el('div', { class: 'minimap hidden' }, [el('h4', { text: 'PRACTICE MAP / LIVE' }), this.miniMap.node, markerLegend()]);
     this.node = el('div', { id: 'hud', class: 'hidden' }, [
       this.clock,
+      this.minimap,
       el('div', { class: 'power' }, [el('span', { text: 'POWER ', style: { color: 'var(--dim)' } }), this.pct, this.usage, this.systems]),
       this.crosshair,
       this.hold,
@@ -33,11 +39,17 @@ export class HUD {
     this.node.classList.toggle('hidden', !v);
   }
 
+  setPracticeMap(on) {
+    this.minimap.classList.toggle('hidden', !on);
+    this.practiceMap = on;
+  }
+
   setDimmed(v) {
     this.node.style.opacity = v ? '0' : '1';
   }
 
   update(sim, interaction, fps, showFps) {
+    if (this.practiceMap) this.miniMap.update(sim);
     const clock = formatGameClock(sim.gameHours);
     if (clock !== this.lastClock) {
       this.lastClock = clock;

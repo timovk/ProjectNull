@@ -1,14 +1,8 @@
 import { el } from './dom.js';
-import { ROOMS, EDGES, CAMERA_ROOMS, STATION } from '../config/FacilityLayout.js';
+import { ROOMS, CAMERA_ROOMS } from '../config/FacilityLayout.js';
+import { FacilityMap, markerLegend } from './FacilityMap.js';
 import { POWER_CONFIG, ENTITY_IDS } from '../config/GameConfig.js';
 import { formatGameClock } from '../core/GameClock.js';
-
-const SVG_NS = 'http://www.w3.org/2000/svg';
-const svg = (tag, attrs = {}) => {
-  const n = document.createElementNS(SVG_NS, tag);
-  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
-  return n;
-};
 
 /** Camera ordering for hotkeys 1..9, 0, -, = */
 export const CAMERA_ORDER = [...CAMERA_ROOMS].sort((a, b) => ROOMS[a].camera.localeCompare(ROOMS[b].camera));
@@ -42,9 +36,11 @@ export class SurveillanceUI {
       this.tabs[t] = b;
       return b;
     }));
-    this.mapPanel = this.buildMap();
+    this.map = new FacilityMap({ onSelect: (room) => this.onSelect(room) });
+    this.legend = markerLegend();
+    this.legend.classList.add('hidden');
     this.pingBtn = el('button', { class: 'ws-btn', onclick: () => this.onPing() });
-    this.camerasView = el('div', { class: 'ws-panel ws-scroll' }, [el('h3', { text: 'FACILITY N-17 / LEVEL 2' }), this.mapPanel, this.pingBtn, el('div', { class: 'log-line', text: 'An acoustic ping makes noise in the selected room.' })]);
+    this.camerasView = el('div', { class: 'ws-panel ws-scroll' }, [el('h3', { text: 'FACILITY N-17 / LEVEL 2' }), this.map.node, this.legend, this.pingBtn, el('div', { class: 'log-line', text: 'An acoustic ping makes noise in the selected room.' })]);
     this.systemsBody = el('div');
     this.systemsView = el('div', { class: 'ws-panel ws-scroll hidden' }, [el('h3', { text: 'DIAGNOSTICS' }), this.systemsBody]);
     this.logBody = el('div');
@@ -63,29 +59,10 @@ export class SurveillanceUI {
     this.lastLogCount = -1;
   }
 
-  buildMap() {
-    const s = svg('svg', { viewBox: '0 0 100 100' });
-    for (const e of EDGES) {
-      const a = ROOMS[e.a].map;
-      const b = ROOMS[e.b].map;
-      s.append(svg('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: `edge ${e.only ? 'vent' : ''}` }));
-    }
-    this.roomNodes = {};
-    for (const [id, r] of Object.entries(ROOMS)) {
-      const g = svg('g', { class: `room ${r.camera ? '' : 'nocam'} ${id === STATION ? 'station' : ''}` });
-      const w = id === STATION ? 20 : 17;
-      g.append(svg('rect', { x: r.map.x - w / 2, y: r.map.y - 4, width: w, height: 8, rx: 0.8 }));
-      const t1 = svg('text', { x: r.map.x, y: r.map.y - 0.3, 'text-anchor': 'middle' });
-      t1.textContent = r.camera ?? (id === STATION ? 'YOU' : 'DUCT');
-      const t2 = svg('text', { x: r.map.x, y: r.map.y + 3, 'text-anchor': 'middle' });
-      t2.textContent = r.name.toUpperCase().slice(0, 15);
-      t2.setAttribute('style', 'font-size:2.4px');
-      g.append(t1, t2);
-      if (r.camera) g.addEventListener('click', () => this.onSelect(id));
-      s.append(g);
-      this.roomNodes[id] = g;
-    }
-    return el('div', { class: 'ws-map' }, [s]);
+  /** Practice mode: show where every subject really is. */
+  setPracticeMap(on) {
+    this.map.showEntities(on);
+    this.legend.classList.toggle('hidden', !on);
   }
 
   setTab(tab) {
@@ -124,10 +101,7 @@ export class SurveillanceUI {
     if (big) this.status.innerHTML = `${big[0]}<small>${big[1]}</small>`;
     else this.status.textContent = '';
     this.timestamp.textContent = `N-17 ${formatGameClock(sim.gameHours)}  ${new Date(Date.UTC(1998, 9, 23)).toISOString().slice(0, 10)}`;
-    for (const [id, g] of Object.entries(this.roomNodes)) {
-      g.classList.toggle('selected', id === room);
-      g.classList.toggle('fault', sv.faults.has(id));
-    }
+    this.map.update(sim, { selected: room });
 
     if (this.tab === 'cameras') {
       const cd = sv.pingCooldownRemaining;

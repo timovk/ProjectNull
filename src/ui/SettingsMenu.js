@@ -14,12 +14,14 @@ const SECTIONS = [
     ['interfaceVolume', 'Interface', 'range', pct]
   ]],
   ['DISPLAY & COMFORT', [
+    ['noStartle', 'No-startle mode (softer sounds, no sudden light or camera changes)', 'check'],
     ['brightness', 'Brightness', 'range', (v) => v.toFixed(2)],
     ['reducedDistortion', 'Reduced visual distortion', 'check'],
     ['reducedMotion', 'Reduced camera motion', 'check'],
     ['disableFlicker', 'Disable flickering lights', 'check'],
     ['subtitles', 'Subtitles / sound cues', 'check'],
-    ['hints', 'Contextual hints', 'check']
+    ['hints', 'Contextual hints', 'check'],
+    ['radioBriefing', 'Radio briefing at the start of Night 1', 'check']
   ]],
   ['GRAPHICS', [
     ['resolutionScale', 'Resolution scale', 'range', pct],

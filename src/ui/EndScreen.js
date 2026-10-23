@@ -25,12 +25,13 @@ const CAUSES = {
 };
 
 export class EndScreen {
-  constructor(root, { onRetry, onMenu }) {
+  constructor(root, { onRetry, onNight, onMenu }) {
     this.body = el('div');
     this.node = el('div', { class: 'screen opaque interactive hidden' }, [
       el('div', { class: 'menu-card' }, [
         this.body,
         el('div', { class: 'row-buttons' }, [
+          (this.nightBtn = el('button', { class: 'small-btn hidden', text: 'START NIGHT 1', onclick: onNight })),
           (this.retryBtn = el('button', { class: 'small-btn', text: 'RETRY NIGHT 1', onclick: onRetry })),
           el('button', { class: 'small-btn', text: 'RETURN TO MENU', onclick: onMenu })
         ])
@@ -43,6 +44,7 @@ export class EndScreen {
     const b = summary.breach;
     const cause = CAUSES[b.entityId] ?? {};
     this.retryBtn.textContent = 'RETRY NIGHT 1';
+    this.nightBtn.classList.add('hidden');
     this.body.replaceChildren(
       el('h1', { class: 'end-title lost', text: 'CONNECTION LOST' }),
       el('div', { class: 'end-sub', text: `OPERATOR SIGNAL TERMINATED AT ${formatGameClock(b.gameHours)}` }),
@@ -59,8 +61,30 @@ export class EndScreen {
     showScreen(this.node, true);
   }
 
+  showPracticeComplete(summary, lessonsDone) {
+    this.retryBtn.textContent = 'PRACTICE AGAIN';
+    this.nightBtn.classList.remove('hidden');
+    this.body.replaceChildren(
+      el('h1', { class: 'end-title won', text: 'PRACTICE COMPLETE' }),
+      el('div', { class: 'end-sub', text: 'YOU MADE IT TO 6:00 AM' }),
+      el('div', { class: 'stats' }, statRows([
+        ['Lessons completed', lessonsDone],
+        ['Times something got in (sent back)', summary.practiceBreaches],
+        ['Entries you blocked', summary.blockedEntries],
+        ['Power remaining', `${summary.powerRemaining.toFixed(1)}%`],
+        ['Door closures', `${summary.doorCloses} (${summary.doorSeconds.toFixed(0)} s shut)`],
+        ['Containment field', `${summary.barrierSeconds.toFixed(0)} s, ${summary.barrierRepels} repelled`]
+      ])),
+      el('div', { class: 'end-note', text: summary.practiceBreaches === 0
+        ? 'Nothing got in. You are ready for the real night: no map, no slowed time, and a breach ends it.'
+        : 'In a real night, any of those breaches would have ended it. The real night has no live map and no slowed time, but you get a radio briefing at the start.' })
+    );
+    showScreen(this.node, true);
+  }
+
   showVictory(summary) {
     this.retryBtn.textContent = 'PLAY NIGHT 1 AGAIN';
+    this.nightBtn.classList.add('hidden');
     const lines = el('div', { class: 'terminal-lines' }, VICTORY_LINES.map((t, i) => el('div', { text: `> ${t}`, style: { animationDelay: `${0.6 + i * 1.1}s` } })));
     this.body.replaceChildren(
       el('h1', { class: 'end-title won', text: 'SHIFT COMPLETE' }),

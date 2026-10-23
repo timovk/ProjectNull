@@ -26,12 +26,14 @@ import { SettingsMenu } from '../ui/SettingsMenu.js';
 import { PauseMenu } from '../ui/PauseMenu.js';
 import { EndScreen } from '../ui/EndScreen.js';
 import { AIDebugger } from '../ui/AIDebugger.js';
+import { PracticeCoach } from '../ui/PracticeCoach.js';
+import { RadioBriefing } from '../ui/RadioBriefing.js';
 import { el, showScreen } from '../ui/dom.js';
 import { HINTS } from '../content/Hints.js';
 import { GATE_MESSAGES, VICTORY_LINES } from '../content/TerminalMessages.js';
 import { TAPE_TRANSCRIPT } from '../content/Documents.js';
 import { ROOMS } from '../config/FacilityLayout.js';
-import { ENTITY_IDS } from '../config/GameConfig.js';
+import { ENTITY_IDS, PRACTICE_SCHEDULE } from '../config/GameConfig.js';
 
 const FAILURE_SECONDS = 10;
 const VICTORY_SECONDS = 9;
@@ -54,6 +56,8 @@ export class Game {
     this.fixedSeed = this.params.get('seed');
     this.fsm = new GameStateMachine(STATES.SPLASH);
     this.timeScale = 1;
+    this.mode = 'NIGHT'; // 'NIGHT' | 'PRACTICE'
+    this.feedDip = 0;
     this.messages = [];
     this.tmpVec = new THREE.Vector3();
     this.failureProgress = 0;
@@ -120,6 +124,13 @@ export class Game {
     this.hud = new HUD(ui);
     this.subtitles = new Subtitles(ui, this.settings);
     this.hints = new HintsUI(ui, this.settings);
+    this.coach = new PracticeCoach(ui);
+    this.radio = new RadioBriefing(ui, {
+      onMessage: (text) => {
+        this.audio.radioChirp();
+        this.pushMessage('R: ' + text, 'radio');
+      }
+    });
     this.docs = new DocumentViewer(ui, { onClose: () => this.closeDocument() });
     this.workstation = new SurveillanceUI(ui, {
       onSelect: (room) => this.selectCamera(room),
@@ -134,8 +145,10 @@ export class Game {
     });
     this.menu = new MainMenu(ui, {
       onBegin: () => this.begin(),
-      onStart: () => this.startNight(),
-      onSettings: () => this.openSettings('main')
+      onStart: () => this.startNight('NIGHT'),
+      onPractice: () => this.startNight('PRACTICE'),
+      onSettings: () => this.openSettings('main'),
+      settings: this.settings
     });
     this.menu.onBackToPause = () => this.pauseMenu.show(true);
     this.settingsMenu = new SettingsMenu(ui, this.settings, { onBack: () => this.closeSettings() });
@@ -146,10 +159,10 @@ export class Game {
         this.pauseMenu.show(false);
         this.menu.show('controls', 'pause');
       },
-      onRestart: () => this.startNight(),
+      onRestart: () => this.startNight(this.mode),
       onExit: () => this.toMenu()
     });
-    this.endScreen = new EndScreen(ui, { onRetry: () => this.startNight(), onMenu: () => this.toMenu() });
+    this.endScreen = new EndScreen(ui, { onRetry: () => this.startNight(this.mode), onNight: () => this.startNight('NIGHT'), onMenu: () => this.toMenu() });
     this.debugger = new AIDebugger(ui, this);
     void controlsGrid;
   }
@@ -171,6 +184,10 @@ export class Game {
     });
     bus.on('surveillance:fault', ({ room, active }) => {
       if (active) this.pushMessage(`${ROOMS[room].camera} ${ROOMS[room].name.toUpperCase()}: SIGNAL LOST`, 'alert');
+    });
+    bus.on('sim:practiceBreach', (b) => {
+      this.coach.onBreach(b);
+      this.pushMessage('PRACTICE: ' + b.designation + ' REACHED THE STATION. RETURNED TO CONTAINMENT', 'alert');
     });
     bus.on('entity:moved', ({ from, to }) => {
       if (this.workstationOpen && (from === this.sim.surveillance.selected || to === this.sim.surveillance.selected)) this.feedDisruption = 1;
@@ -269,7 +286,9 @@ export class Game {
     return this.fixedSeed ?? `N17-${Math.floor(Math.random() * 1e9).toString(36)}`;
   }
 
-  startNight() {
+  startNight(mode = this.mode) {
+    this.mode = mode;
+    const practice = mode === 'PRACTICE';
     this.audio.init();
     this.menu.hideAll();
     this.pauseMenu.show(false);
@@ -280,7 +299,7 @@ export class Game {
 
     this.bus.clear();
     this.subscribe();
-    this.sim = new Simulation({ seed: this.newSeed(), bus: this.bus });
+    this.sim = new Simulation({ seed: this.newSeed(), bus: this.bus, practice, schedule: practice ? PRACTICE_SCHEDULE : undefined });
     this.soundscape = new EntitySoundscape(this);
     this.entities.reset();
     this.lighting.reset();
@@ -289,6 +308,12 @@ export class Game {
     this.hints.reset();
     this.subtitles.clear();
     this.hud.clearWarnings();
+    this.hud.setPracticeMap(practice);
+    this.workstation.setPracticeMap(practice);
+    if (practice) this.coach.start();
+    else this.coach.stop();
+    this.radio.start(!practice && this.settings.get('radioBriefing'));
+    this.feedDip = 0;
     this.debugger.resetLog();
     this.messages = [];
     this.failure = null;
@@ -306,9 +331,10 @@ export class Game {
     this.audio.setFailure(0);
     this.audio.setFade(1, 3);
 
-    const prev = this.state;
-    if (prev === STATES.PAUSED || prev === STATES.ENDED || prev === STATES.MENU) this.fsm.set(STATES.PLAYING);
-    else this.fsm.set(STATES.PLAYING);
+    // Valid from any state: route through MENU when a direct transition is not allowed
+    // (e.g. restarting while a failure or morning sequence is still playing).
+    if (!this.fsm.can(STATES.PLAYING) && this.state !== STATES.PLAYING) this.fsm.set(STATES.MENU);
+    this.fsm.set(STATES.PLAYING);
     this.audio.setPaused(false);
     this.hud.setVisible(true);
     this.hud.setDimmed(false);
@@ -342,6 +368,9 @@ export class Game {
   }
 
   toMenu() {
+    this.coach.stop();
+    this.radio.stop();
+    this.hud.setPracticeMap(false);
     this.pauseMenu.show(false);
     this.endScreen.hide();
     this.settingsMenu.show(false);
@@ -510,9 +539,13 @@ export class Game {
     if (this.workstationOpen) this.closeWorkstation(true);
     this.hud.setDimmed(true);
     this.hints.reset();
-    this.entities.stageBreach(b.entityId, b.via);
+    this.radio.stop();
+    const gentle = this.settings.get('noStartle');
+    // No-startle mode: nothing is shown in the doorway, the room just goes dark.
+    this.entities.stageBreach(b.entityId, gentle ? 'HIDDEN' : b.via);
     this.audio.tape(false);
-    this.subtitles.show(FAILURE_CUES[b.entityId] ?? '[The station goes very quiet]', 'warning', 7);
+    const cues = gentle ? GENTLE_FAILURE_CUES : FAILURE_CUES;
+    this.subtitles.show(cues[b.entityId] ?? '[The station goes very quiet]', 'warning', 7);
   }
 
   updateFailure(dt) {
@@ -551,6 +584,7 @@ export class Game {
     if (this.docs.open) this.docs.hide();
     this.audio.chime();
     this.hints.reset();
+    this.radio.stop();
     this.subtitles.show('[Somewhere above, the morning systems begin to hum]', 'ambient', 6);
   }
 
@@ -573,7 +607,10 @@ export class Game {
       this.player.releaseLock();
       if (!document.pointerLockElement) this.expectUnlock = false;
       this.player.enabled = false;
-      this.endScreen.showVictory(this.sim.getSummary());
+      if (this.mode === 'PRACTICE') {
+        this.endScreen.showPracticeComplete(this.sim.getSummary(), this.coach.lessonsDone);
+        this.coach.stop();
+      } else this.endScreen.showVictory(this.sim.getSummary());
     }
   }
 
@@ -589,7 +626,9 @@ export class Game {
     const sim = this.sim;
 
     if (this.state === STATES.PLAYING) {
-      if (this.timeScale > 0) sim.advance(realDt * this.timeScale);
+      // Practice: time runs at half speed while an urgent lesson waits for the player.
+      const scale = this.timeScale * (this.coach.slow ? 0.5 : 1);
+      if (scale > 0) sim.advance(realDt * scale);
       if (sim.phase === SIM_PHASE.BREACHED) this.beginFailure();
       else if (sim.phase === SIM_PHASE.SURVIVED) this.beginVictory();
     }
@@ -613,7 +652,9 @@ export class Game {
         this.interaction.enabled = !this.docs.open && !this.workstationOpen;
         this.interaction.update(dt);
         this.environment.update(dt, sim);
-        this.hints.check(HINTS, sim);
+        if (this.mode === 'PRACTICE') this.coach.update(sim, this);
+        else this.hints.check(HINTS, sim);
+        this.radio.update(sim);
       }
       if (this.state === STATES.FAILING) this.updateFailure(dt);
       if (this.state === STATES.VICTORY) this.updateVictory(dt);
@@ -667,19 +708,22 @@ export class Game {
   feedParams(sim, time, room) {
     const sv = sim.surveillance;
     const status = sv.feedStatus(room);
-    let staticAmount = 0.06 + (this.feedDisruption ?? 0);
+    const gentle = this.settings.get('noStartle');
+    // No-startle mode: disruptions dim the feed smoothly (feedDip) instead of a static burst.
+    let staticAmount = 0.06 + (gentle ? 0 : this.feedDisruption ?? 0);
     let distort = 0;
     for (const e of sim.ai.entities) {
       if (e.currentRoom !== room) continue;
       if (e.id === ENTITY_IDS.ECHO) distort = this.settings.get('reducedDistortion') ? 0.25 : 1;
       if (e.id === ENTITY_IDS.OBSERVER && e.detected) staticAmount += (e.agitation / 10) * 0.25;
     }
-    if (status === 'DISRUPTED') staticAmount = Math.max(staticAmount, 0.7);
-    if (sv.thermal > 0.7) staticAmount += (sv.thermal - 0.7) * 1.2;
-    if (Math.sin(time * 0.37) * Math.sin(time * 1.13) > 0.93) staticAmount += 0.25; // signal degradation
+    if (status === 'DISRUPTED' && !gentle) staticAmount = Math.max(staticAmount, 0.7);
+    if (sv.thermal > 0.7) staticAmount += (sv.thermal - 0.7) * (gentle ? 0.5 : 1.2);
+    if (!gentle && Math.sin(time * 0.37) * Math.sin(time * 1.13) > 0.93) staticAmount += 0.25; // signal degradation
+    if (gentle) staticAmount = Math.min(staticAmount, 0.3);
     const noSignal = status === 'NO_SIGNAL' || status === 'THERMAL' || status === 'OFFLINE' || status === 'NO_POWER' ? 1 : 0;
     const roomLit = ROOMS[room]?.lightable && sim.security.isCorridorLit(room);
-    return { time, staticAmount: Math.min(1, staticAmount), noSignal, distort, bright: roomLit ? 1.9 : 2.8 };
+    return { time, staticAmount: Math.min(1, staticAmount), noSignal, distort, bright: roomLit ? 1.9 : 2.8, dim: gentle ? 1 - 0.6 * this.feedDip : 1 };
   }
 
   render(time, dt) {
@@ -687,6 +731,11 @@ export class Game {
     const r = this.renderer;
     this.feedDisruption = Math.max(0, (this.feedDisruption ?? 0) - dt * 1.4);
     const roomId = sim.surveillance.selected;
+    {
+      const disrupted = this.feedDisruption > 0.05 || sim.surveillance.isDisrupted(roomId);
+      const target = disrupted ? 1 : 0;
+      this.feedDip += (target - this.feedDip) * Math.min(1, dt * (target > this.feedDip ? 2.5 : 0.9));
+    }
     const room = this.facility.rooms[roomId];
     const focusK = this.player.override?.k ?? 0;
     const showFeed = this.workstationOpen && focusK > 0.92 && this.state === STATES.PLAYING;
@@ -793,6 +842,13 @@ export class Game {
     }
   }
 }
+
+const GENTLE_FAILURE_CUES = {
+  SUBJECT_01: '[The lights slowly go out. Subject 01 came through the open door]',
+  SUBJECT_02: '[Every monitor switches to the same feed: this room. Subject 02 came through the open door]',
+  SUBJECT_03: '[The sounds of the room slowly fade. Subject 03 came down through the vent]',
+  SUBJECT_04: '[The air turns cold and the lights fade. Subject 04 came through the door]'
+};
 
 const FAILURE_CUES = {
   SUBJECT_01: '[The door frame darkens. Something very tall stands in it, and does not move]',

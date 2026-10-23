@@ -41,6 +41,8 @@ export class Simulation {
       fixedTimestep: options.fixedTimestep
     });
     this.graph = options.graph ?? new MovementGraph();
+    /** Practice mode: a breach is recorded and the entity is sent home instead of ending the night. */
+    this.practice = !!options.practice;
     this.phase = SIM_PHASE.RUNNING;
     this.breach = null;
     this.player = { walking: false, working: false, zone: 'STATION' };
@@ -49,6 +51,7 @@ export class Simulation {
     this.stats = {
       encounters: 0,
       blockedEntries: 0,
+      practiceBreaches: 0,
       barrierRepels: 0,
       lightDeterrals: 0,
       doorsForced: 0,
@@ -239,8 +242,7 @@ export class Simulation {
   }
 
   onBreach(entity, edge, from) {
-    this.phase = SIM_PHASE.BREACHED;
-    this.breach = {
+    const breach = {
       entityId: entity.id,
       name: entity.name,
       designation: entity.designation,
@@ -249,8 +251,30 @@ export class Simulation {
       time: this.time,
       gameHours: this.gameHours
     };
+    if (this.practice) return this.practiceReset(entity, breach);
+    this.phase = SIM_PHASE.BREACHED;
+    this.breach = breach;
     this.recordSystem('BREACH', `${entity.id} entered ${STATION} from ${from}`, { entityId: entity.id });
     this.bus.emit('sim:breach', this.breach);
+  }
+
+  /**
+   * Practice only: the breach is logged, then the entity is returned to its
+   * home room. This is the one place an entity is relocated outside the
+   * movement system, and it never happens in a real night.
+   */
+  practiceReset(entity, breach) {
+    this.stats.practiceBreaches++;
+    entity.currentRoom = entity.homeRoom;
+    entity.previousRoom = breach.from;
+    entity.retreatPath = null;
+    entity.frustration = 0;
+    entity.roomEnteredAt = this.time;
+    entity.bonusOpportunities = [];
+    entity.state = 'ROAMING';
+    entity.updateStateFromRoom(this);
+    this.recordSystem('PRACTICE_BREACH', `${entity.id} reached ${STATION} from ${breach.from}; practice returned it to ${entity.homeRoom}`, { entityId: entity.id });
+    this.bus.emit('sim:practiceBreach', breach);
   }
 
   survive() {
@@ -286,6 +310,8 @@ export class Simulation {
       breach: this.breach,
       encounters: this.stats.encounters,
       blockedEntries: this.stats.blockedEntries,
+      practice: this.practice,
+      practiceBreaches: this.stats.practiceBreaches,
       barrierRepels: this.stats.barrierRepels,
       lightDeterrals: this.stats.lightDeterrals,
       doorsForced: this.stats.doorsForced,

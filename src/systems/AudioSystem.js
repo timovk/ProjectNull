@@ -23,6 +23,11 @@ export class AudioSystem {
     settings.onChange(() => this.applyVolumes());
   }
 
+  /** No-startle mode (setting): softer envelopes, no random spikes. */
+  get gentle() {
+    return !!this.settings.get('noStartle');
+  }
+
   init() {
     if (this.ctx) {
       if (this.ctx.state === 'suspended' && !this.paused) this.ctx.resume();
@@ -345,8 +350,9 @@ export class AudioSystem {
     const radioOn = sec.radio && powered;
     this.radioInterference += (threat - this.radioInterference) * Math.min(1, dt * 0.5);
     this.ramp(L.radio.gain, radioOn ? 0.05 + this.radioInterference * 0.05 : 0, 0.6);
-    const crackle = 0.15 + this.radioInterference * 0.6 + (Math.random() < 0.08 + this.radioInterference * 0.3 ? Math.random() * 0.4 : 0);
-    L.radioCrackle.gain.setTargetAtTime(crackle, this.ctx.currentTime, 0.03);
+    const spike = this.gentle ? 0 : Math.random() < 0.08 + this.radioInterference * 0.3 ? Math.random() * 0.4 : 0;
+    const crackle = 0.15 + this.radioInterference * 0.6 + spike;
+    L.radioCrackle.gain.setTargetAtTime(crackle, this.ctx.currentTime, this.gentle ? 0.3 : 0.03);
     const now = this.ctx.currentTime;
     if (radioOn && now > this.radioNextTone) {
       this.radioNextTone = now + 9 + Math.random() * 20;
@@ -354,7 +360,7 @@ export class AudioSystem {
       for (let i = 0; i < 4; i++) {
         const t0 = now + i * 0.42;
         L.radioToneOsc.frequency.setValueAtTime(base * (i % 2 ? 1 : 1.25), t0);
-        L.radioTone.gain.setTargetAtTime(0.06, t0, 0.02);
+        L.radioTone.gain.setTargetAtTime(this.gentle ? 0.04 : 0.06, t0, this.gentle ? 0.1 : 0.02);
         L.radioTone.gain.setTargetAtTime(0, t0 + 0.22, 0.04);
       }
     }
@@ -381,11 +387,14 @@ export class AudioSystem {
     if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t0 + attack + hold + release);
     f.Q.value = q;
     const g = ctx.createGain();
-    const p = Math.min(0.35, peak);
+    // No-startle mode: every non-interface sound swells in and is quieter.
+    const soft = this.gentle && bus !== 'ui';
+    attack = Math.max(soft ? 0.22 : 0.025, attack);
+    const p = Math.min(0.35, peak) * (soft ? 0.65 : 1);
     g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(p, t0 + Math.max(0.025, attack));
-    g.gain.setValueAtTime(p, t0 + Math.max(0.025, attack) + hold);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(0.025, attack) + hold + release);
+    g.gain.linearRampToValueAtTime(p, t0 + attack);
+    g.gain.setValueAtTime(p, t0 + attack + hold);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + hold + release);
     src.connect(f);
     f.connect(g);
     let out = g;
@@ -414,11 +423,13 @@ export class AudioSystem {
     o.frequency.setValueAtTime(freq, t0);
     if (sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo, t0 + attack + hold + release);
     const g = ctx.createGain();
-    const p = Math.min(0.3, peak);
+    const soft = this.gentle && bus !== 'ui';
+    attack = Math.max(soft ? 0.22 : 0.025, attack);
+    const p = Math.min(0.3, peak) * (soft ? 0.65 : 1);
     g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(p, t0 + Math.max(0.025, attack));
-    g.gain.setValueAtTime(p, t0 + Math.max(0.025, attack) + hold);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(0.025, attack) + hold + release);
+    g.gain.linearRampToValueAtTime(p, t0 + attack);
+    g.gain.setValueAtTime(p, t0 + attack + hold);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + hold + release);
     o.connect(g);
     let out = g;
     if (pos) {
@@ -501,6 +512,13 @@ export class AudioSystem {
       this.layers.observed = g;
     }
     this.ramp(this.layers.observed.gain, Math.min(0.006, level * 0.006), 1.5);
+  }
+
+  /** Soft squelch when a radio message comes in (from the radio on the shelf). */
+  radioChirp() {
+    const pos = { x: 4.1, y: 1.25, z: 2.0 };
+    this.burst({ pos, bus: 'ambient', buffer: 'white', type: 'bandpass', freq: 1900, q: 1.5, attack: 0.15, hold: 0.12, release: 0.35, peak: 0.05, reverb: 0.1 });
+    this.tone({ pos, bus: 'ambient', freq: 1250, attack: 0.08, hold: 0.06, release: 0.12, peak: 0.02, delay: 0.1, reverb: 0 });
   }
 
   uiClick() {

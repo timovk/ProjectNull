@@ -515,3 +515,33 @@ test('power failure removes powered protection but is not an instant death', () 
   const w = sim.ai.get(WANDERER);
   assert.equal(w.getEffectiveAI(sim), Math.min(20, w.aiLevel + 2));
 });
+
+test('practice mode: a breach is logged and the entity goes home; the night continues', () => {
+  const sim = new Simulation({ seed: 'practice', practice: true });
+  const w = sim.ai.get(WANDERER);
+  w.setAILevel(20);
+  place(w, 'EAST_APPROACH', 'WAITING');
+  let event = null;
+  sim.bus.on('sim:practiceBreach', (b) => (event = b));
+  const rec = runMovementOpportunity(w, sim);
+  assert.equal(rec.outcome, OUTCOMES.ATTACK_SUCCESS);
+  assert.equal(sim.phase, 'RUNNING');
+  assert.equal(sim.breach, null);
+  assert.equal(w.currentRoom, w.homeRoom);
+  assert.equal(event.entityId, WANDERER);
+  assert.equal(event.via, 'EAST_DOOR');
+  assert.equal(sim.stats.practiceBreaches, 1);
+  assert.ok(sim.log.buffer.some((r) => r.type === 'SYSTEM' && r.kind === 'PRACTICE_BREACH'));
+  sim.runFor(30);
+  assert.equal(sim.phase, 'RUNNING');
+});
+
+test('a real night never uses the practice reset', () => {
+  const sim = new Simulation({ seed: 'real' });
+  const w = sim.ai.get(WANDERER);
+  w.setAILevel(20);
+  place(w, 'EAST_APPROACH', 'WAITING');
+  runMovementOpportunity(w, sim);
+  assert.equal(sim.phase, 'BREACHED');
+  assert.equal(sim.stats.practiceBreaches, 0);
+});

@@ -20,10 +20,18 @@ export const CONTROLS = [
  * credits screens.
  */
 export class MainMenu {
-  constructor(root, { onBegin, onStart, onSettings }) {
+  constructor(root, { onBegin, onStart, onPractice, onSettings, settings }) {
     this.onBegin = onBegin;
     this.onStart = onStart;
+    this.onPractice = onPractice;
     this.onSettings = onSettings;
+    this.settings = settings;
+    const noStartle = el('input', { type: 'checkbox' });
+    noStartle.checked = !!settings?.get('noStartle');
+    noStartle.addEventListener('change', () => settings?.set('noStartle', noStartle.checked));
+    settings?.onChange((k) => {
+      if (k === 'noStartle' || k === '*') noStartle.checked = !!settings.get('noStartle');
+    });
 
     this.splash = el('div', { class: 'screen opaque interactive hidden' }, [
       el('div', { class: 'menu-card' }, [
@@ -37,6 +45,10 @@ export class MainMenu {
           el('br'),
           'Comfort and accessibility options are in Settings.'
         ]),
+        el('label', { class: 'splash-option' }, [
+          noStartle,
+          el('span', {}, ['No-startle mode', el('small', { text: 'Softer sound onsets, no sudden light or camera changes, no surprise noises. You can change this later in Settings.' })])
+        ]),
         el('div', { class: 'menu-list' }, [el('button', { class: 'menu-btn primary', text: 'INITIALIZE TERMINAL', onclick: () => this.onBegin() })])
       ])
     ]);
@@ -46,7 +58,8 @@ export class MainMenu {
         el('h1', { class: 'title', text: 'PROJECT NULL' }),
         el('div', { class: 'subtitle', text: 'NIGHT 1  /  THE FIRST NIGHT' }),
         el('div', { class: 'menu-list' }, [
-          el('button', { class: 'menu-btn primary', text: 'START NIGHT 1', onclick: () => this.onStart() }),
+          el('button', { class: 'menu-btn primary', onclick: () => this.onPractice() }, ['PRACTICE NIGHT', el('small', { text: 'Guided. Cannot be lost. Recommended for your first time.' })]),
+          el('button', { class: 'menu-btn', text: 'START NIGHT 1', onclick: () => this.onStart() }),
           el('button', { class: 'menu-btn', text: 'SETTINGS', onclick: () => this.onSettings() }),
           el('button', { class: 'menu-btn', text: 'CONTROLS', onclick: () => this.show('controls') }),
           el('button', { class: 'menu-btn', text: 'CREDITS', onclick: () => this.show('credits') })

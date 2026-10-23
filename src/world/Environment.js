@@ -45,7 +45,8 @@ export class Environment {
     }
 
     // Three soft knocks from Sublevel B, only heard from the maintenance corridor.
-    if (!this.knockDone && hours >= 3.4 && g.player.zone === 'MAINTENANCE') {
+    // Never in no-startle mode.
+    if (!this.knockDone && hours >= 3.4 && g.player.zone === 'MAINTENANCE' && !g.settings.get('noStartle')) {
       this.knockDone = true;
       g.audio.knock({ x: 2.5, y: 1.2, z: 16.3 }, 0.8);
       g.subtitles.show('[Three soft knocks from behind the Sublevel B door]', 'ambient');
@@ -55,8 +56,19 @@ export class Environment {
   ambientEvent() {
     const g = this.game;
     const a = g.audio;
-    const r = Math.random();
     const far = (x, z) => ({ x, y: 2.5, z });
+    if (g.settings.get('noStartle')) {
+      // Only slow, swelling sounds: no impacts, no footsteps, no light stutter.
+      if (Math.random() < 0.5) {
+        a.creak(far(-12 + Math.random() * 24, -25), 0.5);
+        g.subtitles.show('[Distant metallic creaking]', 'ambient');
+      } else {
+        a.burst({ pos: far(0, 6), bus: 'ambient', buffer: 'pink', type: 'lowpass', freq: 180, attack: 1.5, hold: 1.0, release: 2.5, peak: 0.07 });
+        g.subtitles.show('[Air moves through the pipes, like a long exhale]', 'ambient');
+      }
+      return;
+    }
+    const r = Math.random();
     if (r < 0.22) {
       a.creak(far(-12 + Math.random() * 24, -25), 0.6);
       g.subtitles.show('[Distant metallic creaking]', 'ambient');

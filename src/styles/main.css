@@ -384,6 +384,22 @@ button {
 .ws-map .room.nocam rect { fill: rgba(10, 12, 12, 0.9); stroke-dasharray: 0.8 0.8; cursor: default; }
 .ws-map .room.station rect { fill: rgba(255, 184, 74, 0.12); stroke: var(--accent); cursor: default; }
 .ws-map .room:hover rect { stroke: #fff; }
+.ws-map .marker { transition: transform 0.8s ease; }
+.ws-map .marker text { fill: #050606; font-size: 3.2px; font-weight: 700; font-family: var(--mono); }
+.ws-map .marker.dormant { opacity: 0.45; }
+.ws-map.compact .room text { font-size: 3.6px; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--dim); margin-top: 6px; }
+.map-legend i { display: inline-block; width: 15px; height: 15px; line-height: 15px; border-radius: 50%; text-align: center; color: #050606; font-style: normal; font-weight: 700; font-size: 10px; margin-right: 5px; }
+#hud .minimap {
+  position: absolute;
+  top: 70px;
+  right: 18px;
+  width: min(250px, 30vw);
+  padding: 8px;
+  background: rgba(6, 10, 9, 0.78);
+  border: 1px solid var(--line);
+}
+#hud .minimap h4 { margin: 0 0 4px; font-size: 10px; letter-spacing: 0.2em; color: var(--green); font-weight: 600; }
 .ws-scroll { overflow-y: auto; flex: 1; min-height: 0; }
 .diag-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed rgba(160, 190, 170, 0.08); }
 .diag-row span:last-child { color: var(--text); }
@@ -493,3 +509,50 @@ button {
   .setting-row { grid-template-columns: 1fr 120px 44px; }
   #workstation .side { width: calc(100vw - 32px); top: auto; height: 46vh; }
 }
+
+/* ------------------------------------------------------------ practice coach */
+
+#coach.coach {
+  position: fixed;
+  top: 104px;
+  left: 22px;
+  width: min(420px, calc(100vw - 44px));
+  padding: 12px 16px;
+  background: rgba(6, 10, 9, 0.9);
+  border-left: 3px solid var(--green);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+  animation: hintIn 0.6s ease;
+}
+#coach .label { display: block; font-size: 10px; letter-spacing: 0.2em; color: var(--green); margin-bottom: 4px; }
+#coach .coach-note { font-size: 11px; color: var(--dim); margin-top: 6px; }
+#coach .coach-note:empty { display: none; }
+#coach.urgent { border-left-color: var(--accent); }
+#coach.urgent .label { color: var(--accent); }
+#coach.success { border-left-color: var(--green); }
+#coach.breach { border-left-color: var(--red); }
+#coach.breach .label { color: var(--red); }
+
+/* ------------------------------------------------------------ radio briefing */
+
+#radio {
+  position: fixed;
+  left: 22px;
+  bottom: 84px;
+  width: min(440px, calc(100vw - 44px));
+  padding: 10px 14px;
+  background: rgba(14, 10, 4, 0.86);
+  border-left: 3px solid var(--accent);
+  color: #f2e6cc;
+  font-size: 14px;
+  line-height: 1.5;
+  transition: opacity 0.8s;
+}
+#radio .label { display: block; font-size: 10px; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 3px; }
+#radio.fading { opacity: 0; }
+.log-line.radio { color: #ffd88a; }
+.splash-option { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--text); margin: -8px 0 22px; cursor: pointer; line-height: 1.5; }
+.splash-option input { accent-color: var(--accent); margin-top: 3px; }
+.splash-option small { display: block; color: var(--dim); font-size: 11px; }
+.menu-btn small { display: block; font-size: 11px; color: var(--dim); letter-spacing: 0.06em; margin-top: 2px; }

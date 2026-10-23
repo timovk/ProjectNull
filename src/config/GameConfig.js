@@ -57,6 +57,17 @@ export const AI_SCHEDULE = {
 };
 
 /**
+ * Guided practice night: gentler levels, but every subject (including the
+ * Patient, from 1 AM) shows up so each lesson can trigger.
+ */
+export const PRACTICE_SCHEDULE = {
+  [ENTITY_IDS.WANDERER]: [3, 3, 3, 4, 4, 5],
+  [ENTITY_IDS.OBSERVER]: [2, 2, 2, 3, 3, 4],
+  [ENTITY_IDS.ECHO]: [1, 2, 2, 2, 3, 3],
+  [ENTITY_IDS.PATIENT]: [0, 2, 2, 3, 3, 3]
+};
+
+/**
  * Entity definitions. `attributes` are all on the 0..20 scale. Their exact
  * mechanical effects are documented in src/ai/BehaviorModifiers.js and in the
  * README ("AI attributes").

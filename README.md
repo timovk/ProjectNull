@@ -17,7 +17,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Click **Initialize terminal**, then **Start Night 1**.
+Open http://localhost:5173. Click **Initialize terminal**, then **Practice Night** for a guided first run, or **Start Night 1**. If you startle easily, tick **No-startle mode** on the first screen.
 
 | Command | What it does |
 | --- | --- |
@@ -58,6 +58,26 @@ URL parameters:
 **What pauses the night:** only the pause menu, and the settings or controls screens opened from it. The night also pauses when the window is hidden or the pointer lock is lost. The surveillance workstation, documents and the AI debugger do **not** pause the night.
 
 ---
+
+## Practice night, radio briefing and no-startle mode
+
+**Practice night** is a guided run of the same simulation that cannot be lost.
+
+- A live map in the top-right corner, and dots on the workstation map, show where each creature really is.
+- A coach panel shows one lesson at a time, triggered by what is really happening: sit at the desk, switch cameras, close a door, light a corridor, check the Observer, silence the room for the Echo, use the field for the Patient, fix a camera, and survive a blackout.
+- Urgent lessons slow time to half speed until you act.
+- If something gets in, the night does not end. The breach is logged, the creature is sent back to its cell, and the coach explains what went wrong.
+- AI levels are gentler (`PRACTICE_SCHEDULE` in `src/config/GameConfig.js`), but the Patient becomes active from 1 AM so every lesson can happen.
+
+**Radio briefing.** In a real Night 1, R., the previous technician, radios in during the first two and a half minutes. Each message explains one system, and several are timed to the moment a cell actually unlocks. Messages are also written to the workstation's LOG tab. You can turn the briefing off in Settings.
+
+**No-startle mode.** This is an option on the first screen and in Settings. When it is on:
+
+- Every entity and ambient sound swells in over at least 0.22 s at about two-thirds volume, and the radio has no random crackle spikes.
+- The Sublevel B knock and the random impact and footstep-like ambient sounds are removed.
+- All light changes ease over a few seconds, including the power-failure blackout, and flicker is off.
+- Camera disruptions dim the feed smoothly instead of bursting into static.
+- In the loss sequence, nothing appears in the doorway. The room just fades.
 
 ## The facility and its systems
 
@@ -204,7 +224,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 
 ## Tests and balance
 
-`npm test` runs 80 tests in about 8 seconds:
+`npm test` runs 82 tests in about 8 seconds:
 
 - **Probability.** Over 100,000 trials, AI 0 succeeds exactly 0% of the time and AI 20 exactly 100%. AI 10 converges to 50%, AI 5 to 25%, and every level 0–20 to AI/20. The d20 is uniform.
 - **Pipeline.** Successful rolls and successful moves are counted separately. Blocked and invalid outcomes are distinct.
@@ -213,6 +233,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 - **AI.** Independent timers, the schedule, AI caps, deterministic simultaneous ordering, seed determinism and exact replay. Every attribute formula and every entity countermeasure is checked.
 - **Power.** Each drain, failure without automatic death, the manual brace, the auxiliary cell and thermal shutdown.
 - **Balance.** Scripted players over 40 seeds each, plus the fairness rules.
+- **Practice.** A practice breach is logged and sends the creature home without ending the night. A real night never uses that reset.
 
 Results from `npm run balance` over 100 seeds:
 
@@ -234,7 +255,7 @@ Settings are saved in the browser:
 
 - **Controls:** mouse sensitivity, invert Y, field of view.
 - **Audio:** master, ambient, entity and interface volume.
-- **Display and comfort:** brightness, reduced visual distortion, reduced camera motion, disable flickering lights, subtitles and textual sound cues, contextual hints.
+- **Display and comfort:** no-startle mode, brightness, reduced visual distortion, reduced camera motion, disable flickering lights, subtitles and textual sound cues, contextual hints, radio briefing.
 - **Graphics:** resolution scale, shadows, post-processing, lighting quality, render distance, frame-rate display.
 
 Every gameplay-relevant sound has a textual cue. Flicker never carries information. All audio is synthesized with soft attacks and passes through a limiter.
@@ -256,9 +277,10 @@ src/
                           EntityModels, EntityPresenter, Environment
   render/                 Textures, Materials, PostFX, CameraFeedRenderer
   player/                 PlayerController, InteractionSystem, Interactions
-  ui/                     MainMenu, SettingsMenu, PauseMenu, HUD, SurveillanceUI,
-                          DocumentViewer, Subtitles, EndScreen, AIDebugger, Settings
-  content/                Documents, TerminalMessages, Hints
+  ui/                     MainMenu, SettingsMenu, PauseMenu, HUD, SurveillanceUI, FacilityMap,
+                          PracticeCoach, RadioBriefing, DocumentViewer, Subtitles, EndScreen,
+                          AIDebugger, Settings
+  content/                Documents, TerminalMessages, Hints, PracticeLessons, RadioBriefing
   styles/main.css
 tests/                    *.test.js, tools/policies.js, tools/balanceReport.js
 ```

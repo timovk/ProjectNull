@@ -21,6 +21,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   disableFlicker: false,
   subtitles: true,
   hints: true,
+  noStartle: false,
+  radioBriefing: true,
   // Graphics
   resolutionScale: 1.0,
   shadows: true,

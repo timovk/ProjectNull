@@ -26,6 +26,8 @@ Open http://localhost:5173. Click **Initialize terminal**, then **Practice Night
 | `npm run preview` | Serves the production build locally. |
 | `npm test` | Runs the automated simulation tests with `node:test`. |
 | `npm run balance` | Plays many full nights headlessly with scripted players and prints survival statistics. |
+| `npm run voice:script` | Regenerates `docs/VOICE_LINES.md`, the recording script for every spoken line. |
+| `npm run voice:manifest` | Rescans `public/voice/` for recordings. `dev` and `build` run it automatically. |
 
 URL parameters:
 
@@ -120,6 +122,24 @@ The atmosphere carries real information:
 - **Camera speaker.** The workstation has a small speaker that plays the room you are watching: its own air and machinery, and anything in it. You hear the Wanderer's shuffling, the Patient's breathing and the Echo's murmuring through the feed, and footsteps when something walks into or out of view. The Observer makes almost no sound. A dead feed is static. From across the station the speaker is faintly audible.
 
 `tests/ambience.test.js` checks when the station hushes, how the drone scales, and what the speaker can hear.
+
+## Voices
+
+R.'s radio briefing, the audio log in the electrical room and the facility's announcements (terminal messages, gate releases and the 6 AM report) are spoken. The text always appears too.
+
+Each line plays, in order of preference:
+
+1. **A recording**, if `public/voice/<id>.ogg` (or `.mp3`, `.wav`) exists. It goes through the game's audio: a radio filter positioned at the desk radio for R., a lo-fi filter at the tape recorder for the audio log, and a hall echo for the facility. Every clip is normalised to the same safe level and faded in.
+2. **The browser's built-in voice** (Settings → Audio → *Browser voices*), with a slower, lower setting per speaker. Which voices exist depends on the browser and operating system.
+3. **Text only**, if browser voices are off.
+
+Lines play one at a time, in order. They pause with the game and stop on a new night, at the menu and when a night ends. *Voices* in the audio settings sets their volume.
+
+### Recording your own lines
+
+[`docs/VOICE_LINES.md`](docs/VOICE_LINES.md) is the recording script: 55 lines, each with its file name, the exact text, when it plays and direction per speaker. Save a take as `public/voice/<file name>` and run `npm run dev` or `npm run build`; that line now uses your recording, and the rest keep the browser voice. Lines with the same words in several places are recorded once.
+
+All lines live in `src/content/` and are collected by `src/content/VoiceLines.js`. After changing a line, run `npm run voice:script` to update the script.
 
 ## Practice night, radio briefing and no-startle mode
 
@@ -286,7 +306,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 
 ## Tests and balance
 
-`npm test` runs 101 tests in about 9 seconds:
+`npm test` runs 106 tests in about 9 seconds:
 
 - **Probability.** Over 100,000 trials, AI 0 succeeds exactly 0% of the time and AI 20 exactly 100%. AI 10 converges to 50%, AI 5 to 25%, and every level 0–20 to AI/20. The d20 is uniform.
 - **Pipeline.** Successful rolls and successful moves are counted separately. Blocked and invalid outcomes are distinct.
@@ -297,6 +317,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 - **Balance.** Scripted players over 40 seeds each, plus the fairness rules.
 - **Campaign.** Each night is never easier than the one before, Night 1 stays gentle, and Night 5 stays winnable. Saved progress unlocks nights in order.
 - **Practice.** A practice breach is logged and sends the creature home without ending the night. A real night never uses that reset.
+- **Voices.** Every spoken line has a voice line id, ids are unique file names, terminal text becomes natural speech, the manifest matches recordings to lines and the recording script lists every line.
 
 Night 1 results from `npm run balance` over 200 seeds:
 
@@ -317,7 +338,7 @@ The scripted players see every entity at once, which no human can. Expect real f
 Settings are saved in the browser:
 
 - **Controls:** mouse sensitivity, invert Y, field of view.
-- **Audio:** master, ambient, entity and interface volume.
+- **Audio:** master, ambient, entity, interface and voice volume; browser voices on or off.
 - **Display and comfort:** no-startle mode, brightness, reduced visual distortion, reduced camera motion, disable flickering lights, subtitles and textual sound cues, contextual hints, radio briefing.
 - **Graphics:** resolution scale, shadows, post-processing, lighting quality, render distance, frame-rate display.
 
@@ -335,7 +356,7 @@ src/
   ai/                     Entity, MovementOpportunity, MovementGraph, BehaviorModifiers, AIManager
   ai/entities/            Wanderer, Observer, Echo, Patient
   systems/                Power, Security, Surveillance, Noise, FacilityEvents, NightProgression,
-                          AudioSystem, EntitySoundscape, CameraSpeaker
+                          AudioSystem, EntitySoundscape, CameraSpeaker, VoiceSystem
   world/                  Facility, RoomBuilder, Doors, Lighting, StationPresenter,
                           EntityModels, EntityPresenter, Environment
   render/                 Textures, Materials, PostFX, CameraFeedRenderer
@@ -343,9 +364,12 @@ src/
   ui/                     MainMenu, HowItWorks, CustomNight, SettingsMenu, PauseMenu, HUD, SurveillanceUI, FacilityMap,
                           PracticeCoach, RadioBriefing, DocumentViewer, Subtitles, EndScreen,
                           AIDebugger, Settings
-  content/                Documents, TerminalMessages, Hints, PracticeLessons, RadioBriefing
+  content/                Documents, TerminalMessages, Hints, PracticeLessons, RadioBriefing, VoiceLines
   styles/main.css
 tests/                    *.test.js, tools/balanceReport.js (scripted players: src/ai/ScriptedPlayers.js)
+scripts/                  voiceManifest.js, voiceScript.js
+public/voice/             recorded voice lines and their generated manifest.json
+docs/VOICE_LINES.md       recording script (generated)
 ```
 
 ---
@@ -353,6 +377,6 @@ tests/                    *.test.js, tools/balanceReport.js (scripted players: s
 ## Known limitations
 
 - Nights 2 to 5 differ from Night 1 in AI levels and story text only. They add no new mechanics yet.
-- Art and audio are fully procedural. Entity models are stylized primitives, and there is no voice acting. The audio log plays as a transcript over tape hiss.
+- Art and audio are fully procedural. Entity models are stylized primitives. Voices use the browser's built-in speech until recordings are added, and browser voices vary in quality between systems.
 - The game targets desktop browsers with a mouse and keyboard. There is no touch or gamepad input.
 - Balance was tuned against scripted players and a short browser pass, not human playtests.

@@ -14,6 +14,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   ambientVolume: 0.8,
   entityVolume: 0.9,
   interfaceVolume: 0.6,
+  voiceVolume: 0.8,
+  synthVoices: true,
   // Display / comfort
   brightness: 1.0,
   reducedDistortion: false,
@@ -39,6 +41,7 @@ export const SETTING_LIMITS = {
   ambientVolume: [0, 1, 0.01],
   entityVolume: [0, 1, 0.01],
   interfaceVolume: [0, 1, 0.01],
+  voiceVolume: [0, 1, 0.01],
   brightness: [0.6, 1.8, 0.01],
   resolutionScale: [0.5, 1.0, 0.05],
   renderDistance: [15, 60, 1]

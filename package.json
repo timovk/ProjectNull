@@ -5,11 +5,15 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/voiceManifest.js",
     "dev": "vite",
+    "prebuild": "node scripts/voiceManifest.js",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test \"tests/*.test.js\"",
-    "balance": "node tests/tools/balanceReport.js"
+    "balance": "node tests/tools/balanceReport.js",
+    "voice:manifest": "node scripts/voiceManifest.js",
+    "voice:script": "node scripts/voiceScript.js"
   },
   "dependencies": {
     "three": "0.186.1"

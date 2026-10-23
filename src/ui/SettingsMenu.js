@@ -11,7 +11,9 @@ const SECTIONS = [
     ['masterVolume', 'Master volume', 'range', pct],
     ['ambientVolume', 'Ambient', 'range', pct],
     ['entityVolume', 'Entity sounds', 'range', pct],
-    ['interfaceVolume', 'Interface', 'range', pct]
+    ['interfaceVolume', 'Interface', 'range', pct],
+    ['voiceVolume', 'Voices', 'range', pct],
+    ['synthVoices', 'Browser voices (used for lines without a recording)', 'check']
   ]],
   ['DISPLAY & COMFORT', [
     ['noStartle', 'No-startle mode (softer sounds, no sudden light or camera changes)', 'check'],

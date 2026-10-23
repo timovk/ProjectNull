@@ -1,0 +1,109 @@
+import { RADIO_BRIEFING } from './RadioBriefing.js';
+import { TAPE_TRANSCRIPT } from './Documents.js';
+import { terminalSchedule, GATE_MESSAGES, victoryLines } from './TerminalMessages.js';
+import { NIGHT_COUNT } from '../config/GameConfig.js';
+
+/*
+ * Every spoken line in the game, built from the same content the game shows
+ * as text. This is the single source for:
+ *   - the voice system (which line to say, in which voice)
+ *   - the recording script (docs/VOICE_LINES.md, `npm run voice:script`)
+ * A recorded clip for a line goes in public/voice/<id>.ogg (or .mp3/.wav).
+ */
+
+export const SPEAKERS = {
+  R: {
+    name: 'R., the previous technician (radio)',
+    direction: 'Tired, kind, a little scared. Speaks quietly, as if someone might overhear. Plain, natural delivery; never theatrical. The game adds the radio filter and crackle, so record clean and close to the mic.'
+  },
+  TAPE: {
+    name: 'R., an older recording (audio log)',
+    direction: 'The same person as R., weeks earlier and more exhausted. Slower, sometimes close to a whisper, with pauses where the text has "...". The game adds tape hiss and a lo-fi filter.'
+  },
+  FACILITY: {
+    name: 'Facility announcer (automated)',
+    direction: 'A calm, polite, automated voice with no emotion. Even pace, a short pause at every full stop. It should feel slightly too calm for what it says. The game adds a hall echo.'
+  }
+};
+
+const pad = (n) => String(n).padStart(2, '0');
+
+export const radioLineId = (index) => `radio_${pad(index + 1)}`;
+export const tapeLineId = (index) => `tape_${pad(index + 1)}`;
+export const terminalLineId = (night, msgId) => `facility_n${night}_${msgId}`;
+export const gateLineId = (gate) => `facility_gate_${gate.toLowerCase()}`;
+export const morningLineId = (night, index) => `facility_morning_n${night}_${index + 1}`;
+
+/** Terminal text (ALL CAPS, codes) into something a voice can say naturally. */
+export function speakable(text) {
+  let t = text
+    .replace(/CONTRACTOR-0417/g, 'contractor zero four one seven')
+    .replace(/CELL 05/g, 'cell zero five')
+    .replace(/(\d+)\s*\/\s*(\d+)/g, '$1 of $2')
+    .replace(/(\d+)%/g, '$1 percent')
+    .replace(/\s*\(RETAINED\)/g, ', retained')
+    .replace(/:\s+/g, '. ')
+    .toLowerCase();
+  t = t.replace(/(^|[.!?]\s+)([a-z])/g, (m, p, c) => p + c.toUpperCase());
+  t = t.replace(/\bsublevel b\b/gi, 'Sublevel B').replace(/\bcontainment ([ab])\b/gi, (m, l) => `Containment ${l.toUpperCase()}`);
+  if (!/[.!?]$/.test(t)) t += '.';
+  return t;
+}
+
+function buildLines() {
+  const lines = [];
+  RADIO_BRIEFING.forEach((m, i) => lines.push({
+    id: radioLineId(i), speaker: 'R', text: m.text,
+    context: `Night 1 radio briefing, ${m.at} s into the night`
+  }));
+  TAPE_TRANSCRIPT.forEach((m, i) => {
+    const quoted = /"(.+)"/.exec(m.text);
+    if (!quoted) return; // "[The tape runs out]" is not spoken
+    lines.push({ id: tapeLineId(i), speaker: 'TAPE', text: quoted[1], context: `Audio log in the electrical room, line ${i + 1}` });
+  });
+  for (let n = 1; n <= NIGHT_COUNT; n++) {
+    for (const m of terminalSchedule(n)) {
+      lines.push({ id: terminalLineId(n, m.id), speaker: 'FACILITY', text: speakable(m.text), display: m.text, context: `Night ${n} terminal message at ${m.at.toFixed(2)} h` });
+    }
+  }
+  for (const [gate, text] of Object.entries(GATE_MESSAGES)) {
+    lines.push({ id: gateLineId(gate), speaker: 'FACILITY', text: speakable(text), display: text, context: 'When this gate opens (every night)' });
+  }
+  for (let n = 1; n <= NIGHT_COUNT; n++) {
+    victoryLines(n).forEach((text, i) => lines.push({
+      id: morningLineId(n, i), speaker: 'FACILITY', text: speakable(text), display: text, context: `Night ${n} at 6 AM, morning line ${i + 1}`
+    }));
+  }
+  return lines;
+}
+
+/**
+ * Lines with the same speaker and the same words are recorded once: the
+ * first id is the canonical one, later ids become aliases of it.
+ */
+function dedupe(all) {
+  const canonical = [];
+  const index = new Map();
+  const byKey = new Map();
+  for (const line of all) {
+    const key = `${line.speaker}|${line.text}`;
+    const first = byKey.get(key);
+    if (first) {
+      first.aliases.push(line.id);
+      first.contexts.push(line.context);
+      index.set(line.id, first);
+      continue;
+    }
+    const entry = { ...line, aliases: [], contexts: [line.context] };
+    byKey.set(key, entry);
+    canonical.push(entry);
+    index.set(line.id, entry);
+  }
+  return { canonical, index };
+}
+
+const built = dedupe(buildLines());
+/** One entry per line to record. */
+export const VOICE_LINES = built.canonical;
+/** Every id the game uses (including aliases) -> the line to play. */
+export const VOICE_LINE_INDEX = built.index;

@@ -18,6 +18,8 @@ import { createInteractionHandlers } from '../player/Interactions.js';
 import { AudioSystem } from '../systems/AudioSystem.js';
 import { EntitySoundscape } from '../systems/EntitySoundscape.js';
 import { CameraSpeaker } from '../systems/CameraSpeaker.js';
+import { VoiceSystem } from '../systems/VoiceSystem.js';
+import { radioLineId, tapeLineId, gateLineId, morningLineId } from '../content/VoiceLines.js';
 import { HUD } from '../ui/HUD.js';
 import { Subtitles, HintsUI } from '../ui/Subtitles.js';
 import { DocumentViewer } from '../ui/DocumentViewer.js';
@@ -85,6 +87,7 @@ export class Game {
     this.stationCam = makeFeedCamera([3.9, 2.75, 3.1], [-1.2, 0.9, -2.2], 80);
     this.audio = new AudioSystem(this.settings);
     this.cameraSpeaker = new CameraSpeaker(this);
+    this.voice = new VoiceSystem(this.settings, this.audio);
     this.player = new PlayerController(this.camera, this.renderer.domElement, this.settings, this.facility.kit.colliders);
     this.player.onStep = (pos) => this.audio.playerStep(pos);
     this.interaction = new InteractionSystem(this.camera, this.facility, createInteractionHandlers(this), this);
@@ -133,9 +136,10 @@ export class Game {
     this.hints = new HintsUI(ui, this.settings);
     this.coach = new PracticeCoach(ui);
     this.radio = new RadioBriefing(ui, {
-      onMessage: (text) => {
+      onMessage: (text, index) => {
         this.audio.radioChirp();
         this.pushMessage('R: ' + text, 'radio');
+        this.voice.say(radioLineId(index));
       }
     });
     this.docs = new DocumentViewer(ui, { onClose: () => this.closeDocument() });
@@ -193,7 +197,10 @@ export class Game {
   subscribe() {
     const bus = this.bus;
     bus.on('facility:gate', ({ id, open }) => {
-      if (open && GATE_MESSAGES[id]) this.pushMessage(GATE_MESSAGES[id], 'facility', true);
+      if (open && GATE_MESSAGES[id]) {
+        this.pushMessage(GATE_MESSAGES[id], 'facility', true);
+        this.speakFacility(gateLineId(id), GATE_MESSAGES[id]);
+      }
     });
     bus.on('power:failed', () => {
       this.pushMessage('MAIN POWER DEPLETED. EMERGENCY LIGHTING ENGAGED', 'alert', true);
@@ -329,6 +336,7 @@ export class Game {
     this.endNext = null;
     this.soundscape = new EntitySoundscape(this);
     this.cameraSpeaker.reset();
+    this.voice.stop();
     this.entities.reset();
     this.lighting.reset();
     this.station.reset();
@@ -382,6 +390,7 @@ export class Game {
     this.interaction.cancelHold();
     this.interaction.releaseE();
     this.audio.setPaused(true);
+    this.voice.pause();
     this.expectUnlock = true;
     this.player.releaseLock();
     if (!document.pointerLockElement) this.expectUnlock = false;
@@ -395,6 +404,7 @@ export class Game {
     this.menu.hideAll();
     this.fsm.set(STATES.PLAYING);
     this.audio.setPaused(false);
+    this.voice.resume();
     this.last = performance.now();
     if (!this.workstationOpen && !this.docs.open) this.player.requestLock();
   }
@@ -402,6 +412,7 @@ export class Game {
   toMenu() {
     this.coach.stop();
     this.radio.stop();
+    this.voice.stop();
     this.hud.setPracticeMap(false);
     this.pauseMenu.show(false);
     this.endScreen.hide();
@@ -459,6 +470,11 @@ export class Game {
     this.messages.push({ text, kind, clock: formatGameClock(this.sim?.gameHours ?? 0) });
     if (this.messages.length > 200) this.messages.shift();
     if (flash) this.flashInfo(`TERMINAL: ${text}`, kind === 'alert' ? '' : 'info');
+  }
+
+  /** Speak a facility announcement; when it is heard, show what it said as a subtitle. */
+  speakFacility(lineId, text) {
+    if (this.voice.say(lineId)) this.subtitles.show(`FACILITY: ${text}`, 'radio', 6);
   }
 
   flashInfo(text, kind = 'info', seconds = 5) {
@@ -545,6 +561,7 @@ export class Game {
         if (t >= line.at && !shown.has(line.at)) {
           shown.add(line.at);
           this.subtitles.show(line.text, 'tape', 5.5);
+          this.voice.say(tapeLineId(TAPE_TRANSCRIPT.indexOf(line)));
           if (!this.settings.get('subtitles')) this.hints.push(line.text, 'AUDIO LOG');
         }
       }
@@ -572,6 +589,7 @@ export class Game {
     this.hud.setDimmed(true);
     this.hints.reset();
     this.radio.stop();
+    this.voice.stop();
     const gentle = this.settings.get('noStartle');
     // No-startle mode: nothing is shown in the doorway, the room just goes dark.
     this.entities.stageBreach(b.entityId, gentle ? 'HIDDEN' : b.via);
@@ -626,6 +644,7 @@ export class Game {
     const lines = victoryLines(this.mode === 'NIGHT' ? this.night : 1);
     while (v.lines < lines.length && v.t > 0.8 + v.lines * 1.2) {
       this.pushMessage(lines[v.lines], 'facility', v.lines === 0);
+      this.voice.say(morningLineId(this.mode === 'NIGHT' ? this.night : 1, v.lines));
       v.lines++;
     }
     if (v.t > VICTORY_SECONDS - 2.6 && !v.fading) {

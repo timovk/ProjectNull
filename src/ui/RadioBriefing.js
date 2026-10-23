@@ -56,7 +56,7 @@ export class RadioBriefing {
       this.current = { msg, start: now, until: now + SHOW_SECONDS };
       this.text.textContent = '';
       this.node.classList.remove('hidden', 'fading');
-      this.onMessage?.(msg.text);
+      this.onMessage?.(msg.text, RADIO_BRIEFING.indexOf(msg));
     }
     if (this.current) {
       const k = Math.min(1, (now - this.current.start) / TYPE_SECONDS);

@@ -180,11 +180,18 @@ export class AudioSystem {
       return g;
     };
 
+    // The ambient bed: room tone, machinery, ventilation, hum, rack, generator
+    // and water. It ducks as one ("the building holds its breath") while
+    // something waits at a door or in the duct.
+    const bed = gain(1);
+    bed.connect(amb);
+    L.bed = bed;
+
     // Room tone and distant machinery.
     L.room = gain(0.07);
-    chain(this.loopSource(this.noise.brown), filter('lowpass', 240), L.room, amb);
+    chain(this.loopSource(this.noise.brown), filter('lowpass', 240), L.room, bed);
     L.machinery = gain(0.05);
-    chain(this.loopSource(this.noise.brown), filter('lowpass', 70), L.machinery, amb);
+    chain(this.loopSource(this.noise.brown), filter('lowpass', 70), L.machinery, bed);
     const lfo = ctx.createOscillator();
     lfo.frequency.value = 0.05;
     const lfoGain = gain(0.025);
@@ -195,7 +202,7 @@ export class AudioSystem {
     // Ventilation (positional at the fan).
     L.vent = gain(0);
     L.ventPan = this.panner({ x: 3.45, y: 2.3, z: -3.2 });
-    chain(this.loopSource(this.noise.pink), filter('bandpass', 520, 0.6), filter('lowpass', 2200), L.vent, L.ventPan, amb);
+    chain(this.loopSource(this.noise.pink), filter('bandpass', 520, 0.6), filter('lowpass', 2200), L.vent, L.ventPan, bed);
 
     // Electrical hum of the station lights.
     L.hum = gain(0);
@@ -215,12 +222,12 @@ export class AudioSystem {
     const buzzGain = gain(0.0025);
     chain(buzz, filter('bandpass', 3000, 6), buzzGain, L.hum);
     buzz.start();
-    chain(L.hum, L.humPan, amb);
+    chain(L.hum, L.humPan, bed);
 
     // Surveillance rack.
     L.rack = gain(0);
     L.rackPan = this.panner({ x: -3.75, y: 1.2, z: -2.6 });
-    chain(this.loopSource(this.noise.pink), filter('highpass', 2800), L.rack, L.rackPan, amb);
+    chain(this.loopSource(this.noise.pink), filter('highpass', 2800), L.rack, L.rackPan, bed);
     const whine = ctx.createOscillator();
     whine.frequency.value = 247;
     const whineGain = gain(0.12);
@@ -265,12 +272,39 @@ export class AudioSystem {
     gosc.frequency.value = 48;
     chain(gosc, filter('lowpass', 160), L.gen);
     gosc.start();
-    chain(L.gen, L.genPan, amb);
+    chain(L.gen, L.genPan, bed);
 
     // Water in the pump room.
     L.water = gain(0.035);
     L.waterPan = this.panner({ x: -1.4, y: -1.2, z: 9 });
-    chain(this.loopSource(this.noise.pink), filter('bandpass', 900, 0.4), L.water, L.waterPan, amb);
+    chain(this.loopSource(this.noise.pink), filter('bandpass', 900, 0.4), L.water, L.waterPan, bed);
+
+    // Dread drone: a low, slowly beating, slightly dissonant tone that swells as
+    // the nearest subject gets closer. Felt more than heard; never sudden.
+    L.dread = gain(0);
+    const dreadFilter = filter('lowpass', 320, 0.5);
+    chain(dreadFilter, L.dread, amb);
+    for (const [f, v, type] of [[36, 0.55, 'sine'], [38.3, 0.45, 'sine'], [73, 0.22, 'triangle'], [109, 0.09, 'sine'], [116.5, 0.08, 'sine']]) {
+      const o = ctx.createOscillator();
+      o.type = type;
+      o.frequency.value = f;
+      const g = gain(v);
+      o.connect(g);
+      g.connect(dreadFilter);
+      o.start();
+      if (f > 100) {
+        // Slow pitch drift on the dissonant pair keeps it unsettled.
+        const drift = ctx.createOscillator();
+        drift.frequency.value = 0.05 + Math.random() * 0.04;
+        const depth = gain(1.6);
+        drift.connect(depth);
+        depth.connect(o.frequency);
+        drift.start();
+      }
+    }
+    const pressure = gain(0.35);
+    chain(this.loopSource(this.noise.brown), filter('lowpass', 90), pressure, dreadFilter);
+    this.dreadLevel = 0;
 
     // Tape hiss for audio logs.
     L.tape = gain(0);
@@ -335,9 +369,13 @@ export class AudioSystem {
    * Per-frame update of continuous layers from simulation state.
    * `threat` 0..1 = proximity of the nearest active entity (radio interference).
    */
-  updateLayers(sim, dt, threat = 0) {
+  updateLayers(sim, dt, threat = 0, { hush = false, dread = 0 } = {}) {
     if (!this.ready) return;
     const L = this.layers;
+    // Slow in both directions: rising over ~4 s, fading over ~6 s.
+    this.ramp(L.bed.gain, hush ? 0.42 : 1, hush ? 3 : 4);
+    this.ramp(L.dread.gain, Math.max(0, Math.min(1, dread)) * 0.13, dread > this.dreadLevel ? 4 : 6);
+    this.dreadLevel = dread;
     const sec = sim.security;
     const powered = !sim.power.failed;
     this.ramp(L.vent.gain, sec.fan && powered ? 0.16 : 0, 1.5);
@@ -374,7 +412,7 @@ export class AudioSystem {
   // ------------------------------------------------------------ one-shots
 
   /** Filtered noise burst with a gentle envelope. */
-  burst({ pos = null, bus = 'entity', buffer = 'white', type = 'bandpass', freq = 800, q = 1, sweepTo = null, attack = 0.03, hold = 0.05, release = 0.3, peak = 0.2, delay = 0, reverb = 0.3, rate = 1 }) {
+  burst({ pos = null, bus = 'entity', dest = null, buffer = 'white', type = 'bandpass', freq = 800, q = 1, sweepTo = null, attack = 0.03, hold = 0.05, release = 0.3, peak = 0.2, delay = 0, reverb = 0.3, rate = 1 }) {
     if (!this.ready) return;
     const ctx = this.ctx;
     const t0 = ctx.currentTime + delay;
@@ -403,8 +441,8 @@ export class AudioSystem {
       g.connect(pan);
       out = pan;
     }
-    out.connect(this.buses[bus]);
-    if (reverb > 0) {
+    out.connect(dest ?? this.buses[bus]);
+    if (reverb > 0 && !dest) {
       const rg = ctx.createGain();
       rg.gain.value = reverb;
       out.connect(rg);
@@ -414,7 +452,7 @@ export class AudioSystem {
     src.stop(t0 + attack + hold + release + 0.1);
   }
 
-  tone({ pos = null, bus = 'entity', type = 'sine', freq = 440, sweepTo = null, attack = 0.03, hold = 0.05, release = 0.3, peak = 0.1, delay = 0, reverb = 0.2 }) {
+  tone({ pos = null, bus = 'entity', dest = null, type = 'sine', freq = 440, sweepTo = null, attack = 0.03, hold = 0.05, release = 0.3, peak = 0.1, delay = 0, reverb = 0.2 }) {
     if (!this.ready) return;
     const ctx = this.ctx;
     const t0 = ctx.currentTime + delay;
@@ -437,8 +475,8 @@ export class AudioSystem {
       g.connect(pan);
       out = pan;
     }
-    out.connect(this.buses[bus]);
-    if (reverb > 0) {
+    out.connect(dest ?? this.buses[bus]);
+    if (reverb > 0 && !dest) {
       const rg = this.ctx.createGain();
       rg.gain.value = reverb;
       out.connect(rg);

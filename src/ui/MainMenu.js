@@ -1,5 +1,6 @@
 import { el, showScreen } from './dom.js';
 import { HowItWorks } from './HowItWorks.js';
+import { version } from '../../package.json';
 
 export const CONTROLS = [
   ['Move', ['W', 'A', 'S', 'D']],
@@ -66,7 +67,7 @@ export class MainMenu {
           el('button', { class: 'menu-btn', onclick: () => this.show('howItWorks') }, ['HOW IT WORKS', el('small', { text: 'The maths and behaviour behind the AI, with live calculators.' })]),
           el('button', { class: 'menu-btn', text: 'CREDITS', onclick: () => this.show('credits') })
         ]),
-        el('div', { class: 'menu-footer', text: 'v0.1.0  /  HELIX RESEARCH DIRECTORATE  /  CONTRACT 4471' })
+        el('div', { class: 'menu-footer', text: `v${version}  /  HELIX RESEARCH DIRECTORATE  /  CONTRACT 4471` })
       ])
     ]);
 
@@ -129,7 +130,7 @@ const HOW_TO = `
 <p>Each subject behaves differently and is countered differently. The documents in the station and the maintenance area explain what the previous technician learned.</p>`;
 
 const CREDITS = `
-<p><strong>PROJECT NULL</strong> v0.1.0 "The First Night"</p>
+<p><strong>PROJECT NULL</strong> v${version} "The First Night"</p>
 <p>Design, programming, procedural art and procedural audio built for this vertical slice with Three.js and the Web Audio API.</p>
 <p>No external art or audio assets are used. Every texture, model and sound is generated at runtime.</p>
 <p>Built with <strong>Three.js</strong> (MIT) and <strong>Vite</strong> (MIT).</p>

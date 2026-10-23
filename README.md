@@ -1,6 +1,6 @@
 # PROJECT NULL
 
-**Version 0.1.0 — The First Night**
+**Version 0.3.0 — The First Night**
 
 A first-person psychological horror game set in Research Facility N-17, built with HTML, CSS, JavaScript and Three.js. You are a contract technician in a security station from 12 AM to 6 AM. Four subjects move through the facility. Their behaviour is driven by a transparent, testable **movement-opportunity simulation**, not by scripts.
 
@@ -62,6 +62,16 @@ URL parameters:
 ## How It Works screen
 
 The main menu has a **How It Works** screen for anyone who wants the maths. It covers the d20 roll and what each AI level means, the night's schedule and timed gates, every subject's numbers and counters, the four traits and global rules, power and noise, a strategy guide, and the engine internals. It includes three live calculators: the roll odds and arrival times, route-choice probabilities by aggression, and a station console simulator for noise and power drain. Every number is computed from the game's own config, and `tests/howitworks.test.js` checks the calculators against the simulation.
+
+## Ambience
+
+The atmosphere carries real information:
+
+- **Dread drone.** A very low, slowly beating, slightly dissonant tone swells as the nearest creature gets closer, and is silent while everything is more than about three rooms away. It also rises slightly through the night. Changes take 4 to 6 seconds, so it is never sudden.
+- **The station holds its breath.** While an awake creature waits right outside, at a door or in the duct, the station's hum, ventilation, machinery and room tone dip to about 40%. A subtitle marks the moment for players without sound.
+- **Camera speaker.** The workstation has a small speaker that plays the room you are watching: its own air and machinery, and anything in it. You hear the Wanderer's shuffling, the Patient's breathing and the Echo's murmuring through the feed, and footsteps when something walks into or out of view. The Observer makes almost no sound. A dead feed is static. From across the station the speaker is faintly audible.
+
+`tests/ambience.test.js` checks when the station hushes, how the drone scales, and what the speaker can hear.
 
 ## Practice night, radio briefing and no-startle mode
 
@@ -228,7 +238,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 
 ## Tests and balance
 
-`npm test` runs 87 tests in about 8 seconds:
+`npm test` runs 92 tests in about 8 seconds:
 
 - **Probability.** Over 100,000 trials, AI 0 succeeds exactly 0% of the time and AI 20 exactly 100%. AI 10 converges to 50%, AI 5 to 25%, and every level 0–20 to AI/20. The d20 is uniform.
 - **Pipeline.** Successful rolls and successful moves are counted separately. Blocked and invalid outcomes are distinct.
@@ -276,7 +286,7 @@ src/
   ai/                     Entity, MovementOpportunity, MovementGraph, BehaviorModifiers, AIManager
   ai/entities/            Wanderer, Observer, Echo, Patient
   systems/                Power, Security, Surveillance, Noise, FacilityEvents, NightProgression,
-                          AudioSystem, EntitySoundscape
+                          AudioSystem, EntitySoundscape, CameraSpeaker
   world/                  Facility, RoomBuilder, Doors, Lighting, StationPresenter,
                           EntityModels, EntityPresenter, Environment
   render/                 Textures, Materials, PostFX, CameraFeedRenderer

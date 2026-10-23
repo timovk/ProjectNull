@@ -23,6 +23,31 @@ export const SOUND_POSITIONS = {
 
 const HOP_GAIN = [1, 0.75, 0.4, 0.2, 0.08];
 
+/** Rooms right outside the station: a door approach or the duct above it. */
+export const THRESHOLD_ROOMS = Object.freeze(['WEST_APPROACH', 'EAST_APPROACH', 'VENT_DUCT']);
+
+/** Proximity of one subject, by sound hops from the station (0 = inside). */
+export const THREAT_BY_HOPS = Object.freeze([1, 0.85, 0.55, 0.3, 0.12]);
+
+/**
+ * "The building holds its breath": true while an awake subject waits right
+ * outside the station (at a door or in the duct) and is not leaving.
+ */
+export function hushActive(sim) {
+  return sim.ai.entities.some((e) => e.aiLevel > 0 && e.state !== 'RETREATING' && THRESHOLD_ROOMS.includes(e.currentRoom));
+}
+
+/**
+ * Dread drone level, 0..1. Mostly the nearest subject's proximity (nothing
+ * until it is closer than about three rooms), plus a small rise through the
+ * night so the late hours feel heavier.
+ */
+export function dreadLevel(threat, hourIndex = 0) {
+  const near = Math.max(0, Math.min(1, (threat - 0.25) / 0.75));
+  const late = Math.max(0, Math.min(1, hourIndex / 5));
+  return Math.min(1, near * 0.85 + late * 0.15);
+}
+
 function direction(room) {
   if (room.startsWith('WEST')) return 'west';
   if (room.startsWith('EAST')) return 'east';
@@ -43,6 +68,8 @@ export class EntitySoundscape {
     this.game = game;
     this.timers = new Map();
     this.lastRadioBand = 0;
+    this.hush = false;
+    this.dread = 0;
     const bus = game.bus;
     bus.on('entity:moved', (e) => this.onMoved(e));
     bus.on('entity:entryBlocked', (e) => this.onBlocked(e));
@@ -66,11 +93,14 @@ export class EntitySoundscape {
   reset() {
     this.timers.clear();
     this.lastRadioBand = 0;
+    this.hush = false;
+    this.dread = 0;
   }
 
-  onMoved({ entityId, to, retreat }) {
+  onMoved({ entityId, from, to, retreat }) {
     const sim = this.game.sim;
     if (!sim || this.game.state !== 'PLAYING') return;
+    this.game.cameraSpeaker?.onMoved({ entityId, from, to });
     const hops = this.hops(to);
     if (hops > 4) return;
     const pos = SOUND_POSITIONS[to];
@@ -206,6 +236,13 @@ export class EntitySoundscape {
       if (band > this.lastRadioBand && band >= 2) this.cue(band === 3 ? '[Radio: heavy interference]' : '[Radio: interference rising]', 'radio');
       this.lastRadioBand = band;
     }
+
+    // Ambience: the bed hushes while something waits outside, and the dread
+    // drone follows the nearest subject. Both carry real information.
+    const hush = hushActive(sim);
+    if (hush && !this.hush) this.cue('[The station seems to hold its breath]', 'ambient');
+    this.hush = hush;
+    this.dread = dreadLevel(threat, sim.progression.hourIndex);
     return threat;
   }
 }

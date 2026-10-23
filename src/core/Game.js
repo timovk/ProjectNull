@@ -17,6 +17,7 @@ import { InteractionSystem } from '../player/InteractionSystem.js';
 import { createInteractionHandlers } from '../player/Interactions.js';
 import { AudioSystem } from '../systems/AudioSystem.js';
 import { EntitySoundscape } from '../systems/EntitySoundscape.js';
+import { CameraSpeaker } from '../systems/CameraSpeaker.js';
 import { HUD } from '../ui/HUD.js';
 import { Subtitles, HintsUI } from '../ui/Subtitles.js';
 import { DocumentViewer } from '../ui/DocumentViewer.js';
@@ -78,6 +79,7 @@ export class Game {
     this.station = new StationPresenter(this.facility, this.feeds, this.settings);
     this.stationCam = makeFeedCamera([3.9, 2.75, 3.1], [-1.2, 0.9, -2.2], 80);
     this.audio = new AudioSystem(this.settings);
+    this.cameraSpeaker = new CameraSpeaker(this);
     this.player = new PlayerController(this.camera, this.renderer.domElement, this.settings, this.facility.kit.colliders);
     this.player.onStep = (pos) => this.audio.playerStep(pos);
     this.interaction = new InteractionSystem(this.camera, this.facility, createInteractionHandlers(this), this);
@@ -301,6 +303,7 @@ export class Game {
     this.subscribe();
     this.sim = new Simulation({ seed: this.newSeed(), bus: this.bus, practice, schedule: practice ? PRACTICE_SCHEDULE : undefined });
     this.soundscape = new EntitySoundscape(this);
+    this.cameraSpeaker.reset();
     this.entities.reset();
     this.lighting.reset();
     this.station.reset();
@@ -673,7 +676,11 @@ export class Game {
       const listenerCam = this.state === STATES.MENU || this.state === STATES.SPLASH ? this.menuCam : this.camera;
       this.audio.updateListener(listenerCam);
       const threat = playing ? this.soundscape.update(dt) : 0;
-      this.audio.updateLayers(sim, dt, threat);
+      const ambience = playing || this.state === STATES.FAILING
+        ? { hush: playing && this.soundscape.hush, dread: this.soundscape.dread }
+        : { hush: false, dread: 0 };
+      this.audio.updateLayers(sim, dt, threat, ambience);
+      this.cameraSpeaker.update(sim, dt, { open: this.workstationOpen, active: playing || this.state === STATES.PAUSED });
     }
     if (playing || this.state === STATES.FAILING) {
       this.updateWarnings(sim);

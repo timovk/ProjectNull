@@ -39,6 +39,11 @@ export class HUD {
     this.node.classList.toggle('hidden', !v);
   }
 
+  setNightLabel(text) {
+    this.nightLabel = text;
+    this.lastClock = null; // redraw
+  }
+
   setPracticeMap(on) {
     this.minimap.classList.toggle('hidden', !on);
     this.practiceMap = on;
@@ -53,7 +58,7 @@ export class HUD {
     const clock = formatGameClock(sim.gameHours);
     if (clock !== this.lastClock) {
       this.lastClock = clock;
-      this.clock.innerHTML = `${clock}<small>NIGHT 1</small>`;
+      this.clock.innerHTML = `${clock}<small>${this.nightLabel ?? 'NIGHT 1'}</small>`;
     }
     const lvl = sim.power.level;
     const pct = `${Math.max(0, lvl).toFixed(0)}%`;

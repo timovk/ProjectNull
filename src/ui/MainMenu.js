@@ -1,5 +1,6 @@
 import { el, showScreen } from './dom.js';
 import { HowItWorks } from './HowItWorks.js';
+import { CustomNight } from './CustomNight.js';
 import { version } from '../../package.json';
 
 export const CONTROLS = [
@@ -22,8 +23,9 @@ export const CONTROLS = [
  * credits screens.
  */
 export class MainMenu {
-  constructor(root, { onBegin, onStart, onPractice, onSettings, settings }) {
+  constructor(root, { onBegin, onStart, onPractice, onCustom, onSettings, settings }) {
     this.onBegin = onBegin;
+    this.onCustom = onCustom;
     this.onStart = onStart;
     this.onPractice = onPractice;
     this.onSettings = onSettings;
@@ -62,6 +64,7 @@ export class MainMenu {
         el('div', { class: 'menu-list' }, [
           el('button', { class: 'menu-btn primary', onclick: () => this.onPractice() }, ['PRACTICE NIGHT', el('small', { text: 'Guided. Cannot be lost. Recommended for your first time.' })]),
           el('button', { class: 'menu-btn', text: 'START NIGHT 1', onclick: () => this.onStart() }),
+          el('button', { class: 'menu-btn', onclick: () => this.show('custom') }, ['CUSTOM NIGHT', el('small', { text: 'Set every subject\'s AI level from 0 to 20.' })]),
           el('button', { class: 'menu-btn', text: 'SETTINGS', onclick: () => this.onSettings() }),
           el('button', { class: 'menu-btn', text: 'CONTROLS', onclick: () => this.show('controls') }),
           el('button', { class: 'menu-btn', onclick: () => this.show('howItWorks') }, ['HOW IT WORKS', el('small', { text: 'The maths and behaviour behind the AI, with live calculators.' })]),
@@ -91,16 +94,20 @@ export class MainMenu {
 
     for (const n of [this.splash, this.main, this.controls, this.credits]) root.append(n);
     this.howItWorks = new HowItWorks(root, { onBack: () => this.back() });
+    this.customNight = new CustomNight(root, { onBack: () => this.back(), onStart: (levels) => this.onCustom?.(levels) });
     this.backTarget = 'main';
   }
 
   get screens() {
-    return { splash: this.splash, main: this.main, controls: this.controls, credits: this.credits, howItWorks: this.howItWorks.node };
+    return { splash: this.splash, main: this.main, controls: this.controls, credits: this.credits, howItWorks: this.howItWorks.node, custom: this.customNight.node };
   }
 
   show(which, backTarget = 'main') {
     this.backTarget = backTarget;
-    for (const [k, n] of Object.entries(this.screens)) showScreen(n, k === which);
+    for (const [k, n] of Object.entries(this.screens)) {
+      if (k === 'custom') this.customNight.show(k === which); // starts or stops its estimate
+      else showScreen(n, k === which);
+    }
   }
 
   back() {
@@ -111,7 +118,10 @@ export class MainMenu {
   }
 
   hideAll() {
-    for (const n of Object.values(this.screens)) showScreen(n, false);
+    for (const [k, n] of Object.entries(this.screens)) {
+      if (k === 'custom') this.customNight.show(false);
+      else showScreen(n, false);
+    }
   }
 }
 

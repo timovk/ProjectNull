@@ -29,6 +29,7 @@ import { EndScreen } from '../ui/EndScreen.js';
 import { AIDebugger } from '../ui/AIDebugger.js';
 import { PracticeCoach } from '../ui/PracticeCoach.js';
 import { RadioBriefing } from '../ui/RadioBriefing.js';
+import { customSchedule, customLabel } from '../ui/CustomNight.js';
 import { el, showScreen } from '../ui/dom.js';
 import { HINTS } from '../content/Hints.js';
 import { GATE_MESSAGES, VICTORY_LINES } from '../content/TerminalMessages.js';
@@ -149,6 +150,10 @@ export class Game {
       onBegin: () => this.begin(),
       onStart: () => this.startNight('NIGHT'),
       onPractice: () => this.startNight('PRACTICE'),
+      onCustom: (levels) => {
+        this.customLevels = levels;
+        this.startNight('CUSTOM');
+      },
       onSettings: () => this.openSettings('main'),
       settings: this.settings
     });
@@ -291,6 +296,8 @@ export class Game {
   startNight(mode = this.mode) {
     this.mode = mode;
     const practice = mode === 'PRACTICE';
+    const custom = mode === 'CUSTOM';
+    const levels = this.customLevels ?? [5, 4, 3, 1];
     this.audio.init();
     this.menu.hideAll();
     this.pauseMenu.show(false);
@@ -301,7 +308,7 @@ export class Game {
 
     this.bus.clear();
     this.subscribe();
-    this.sim = new Simulation({ seed: this.newSeed(), bus: this.bus, practice, schedule: practice ? PRACTICE_SCHEDULE : undefined });
+    this.sim = new Simulation({ seed: this.newSeed(), bus: this.bus, practice, schedule: practice ? PRACTICE_SCHEDULE : custom ? customSchedule(levels) : undefined });
     this.soundscape = new EntitySoundscape(this);
     this.cameraSpeaker.reset();
     this.entities.reset();
@@ -315,7 +322,11 @@ export class Game {
     this.workstation.setPracticeMap(practice);
     if (practice) this.coach.start();
     else this.coach.stop();
-    this.radio.start(!practice && this.settings.get('radioBriefing'));
+    this.radio.start(!practice && !custom && this.settings.get('radioBriefing'));
+    this.hud.setNightLabel(practice ? 'PRACTICE' : custom ? customLabel(levels) : 'NIGHT 1');
+    this.endScreen.setRun(custom
+      ? { label: `Custom night ${levels.join('/')}`, retry: 'RETRY CUSTOM NIGHT', again: 'PLAY IT AGAIN' }
+      : { label: 'Night 1', retry: 'RETRY NIGHT 1', again: 'PLAY NIGHT 1 AGAIN' });
     this.feedDip = 0;
     this.debugger.resetLog();
     this.messages = [];

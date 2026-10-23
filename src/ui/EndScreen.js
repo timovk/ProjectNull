@@ -40,16 +40,23 @@ export class EndScreen {
     root.append(this.node);
   }
 
+  /** Which night this was: label for stats, and the retry button text. */
+  setRun({ label = 'Night 1', retry = 'RETRY NIGHT 1', again = 'PLAY NIGHT 1 AGAIN' } = {}) {
+    this.run = { label, retry, again };
+  }
+
   showFailure(summary) {
+    const run = this.run ?? { label: 'Night 1', retry: 'RETRY NIGHT 1' };
     const b = summary.breach;
     const cause = CAUSES[b.entityId] ?? {};
-    this.retryBtn.textContent = 'RETRY NIGHT 1';
+    this.retryBtn.textContent = run.retry;
     this.nightBtn.classList.add('hidden');
     this.body.replaceChildren(
       el('h1', { class: 'end-title lost', text: 'CONNECTION LOST' }),
       el('div', { class: 'end-sub', text: `OPERATOR SIGNAL TERMINATED AT ${formatGameClock(b.gameHours)}` }),
       el('div', { class: 'stats' }, statRows([
         ['Time survived', `${formatDuration(summary.timeSurvived)} (${formatGameClock(b.gameHours)})`],
+        ['Night', run.label],
         ['Entity responsible', `${b.designation} / ${b.name}`],
         ['Cause of failure', cause[b.via] ?? `${b.designation} entered the station.`],
         ['Power remaining', `${summary.powerRemaining.toFixed(1)}%${summary.powerFailed ? ' (main cell depleted)' : ''}`],
@@ -83,15 +90,16 @@ export class EndScreen {
   }
 
   showVictory(summary) {
-    this.retryBtn.textContent = 'PLAY NIGHT 1 AGAIN';
+    const run = this.run ?? { label: 'Night 1', again: 'PLAY NIGHT 1 AGAIN' };
+    this.retryBtn.textContent = run.again;
     this.nightBtn.classList.add('hidden');
     const lines = el('div', { class: 'terminal-lines' }, VICTORY_LINES.map((t, i) => el('div', { text: `> ${t}`, style: { animationDelay: `${0.6 + i * 1.1}s` } })));
     this.body.replaceChildren(
       el('h1', { class: 'end-title won', text: 'SHIFT COMPLETE' }),
-      el('div', { class: 'end-sub', text: 'NIGHT 1 / 6:00 AM' }),
+      el('div', { class: 'end-sub', text: `${run.label.toUpperCase()} / 6:00 AM` }),
       lines,
       el('div', { class: 'stats' }, statRows([
-        ['Night completed', 'Night 1'],
+        ['Night completed', run.label],
         ['Survival time', formatDuration(summary.timeSurvived)],
         ['Power remaining', `${summary.powerRemaining.toFixed(1)}%`],
         ['Entity encounters', summary.encounters],

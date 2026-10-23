@@ -63,6 +63,23 @@ URL parameters:
 
 The main menu has a **How It Works** screen for anyone who wants the maths. It covers the d20 roll and what each AI level means, the night's schedule and timed gates, every subject's numbers and counters, the four traits and global rules, power and noise, a strategy guide, and the engine internals. It includes three live calculators: the roll odds and arrival times, route-choice probabilities by aggression, and a station console simulator for noise and power drain. Every number is computed from the game's own config, and `tests/howitworks.test.js` checks the calculators against the simulation.
 
+## Custom Night
+
+**Custom Night** on the main menu lets you set each subject's AI level from 0 to 20. The levels stay fixed from 12 AM to 6 AM. As you move the sliders, the screen plays 24 headless nights with the scripted expert player and shows how often it survives, from COMFORTABLE to IMPOSSIBLE. Measured over 40 nights each:
+
+| Levels | Skilled-player survival |
+| --- | --- |
+| 5/4/3/1 (Night 1 average) | 95% |
+| 3/3/3/3 | 88% |
+| 5/5/5/5 | 45% |
+| 7/7/7/7 | 20% |
+| 8/8/8/8 | 3% |
+| 10/10/10/0 | 80% |
+| 10/10/10/10 | 0% |
+| 20/20/20/20 | 0% |
+
+The Patient is the deciding factor at high levels. Awake all night, it comes back so often that the containment field alone empties the battery. Even a perfect player who can see the Echo's hidden timer survives only about 1 night in 200 at 20/20/20/20.
+
 ## Ambience
 
 The atmosphere carries real information:
@@ -238,7 +255,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 
 ## Tests and balance
 
-`npm test` runs 92 tests in about 8 seconds:
+`npm test` runs 97 tests in about 8 seconds:
 
 - **Probability.** Over 100,000 trials, AI 0 succeeds exactly 0% of the time and AI 20 exactly 100%. AI 10 converges to 50%, AI 5 to 25%, and every level 0–20 to AI/20. The d20 is uniform.
 - **Pipeline.** Successful rolls and successful moves are counted separately. Blocked and invalid outcomes are distinct.
@@ -291,12 +308,12 @@ src/
                           EntityModels, EntityPresenter, Environment
   render/                 Textures, Materials, PostFX, CameraFeedRenderer
   player/                 PlayerController, InteractionSystem, Interactions
-  ui/                     MainMenu, HowItWorks, SettingsMenu, PauseMenu, HUD, SurveillanceUI, FacilityMap,
+  ui/                     MainMenu, HowItWorks, CustomNight, SettingsMenu, PauseMenu, HUD, SurveillanceUI, FacilityMap,
                           PracticeCoach, RadioBriefing, DocumentViewer, Subtitles, EndScreen,
                           AIDebugger, Settings
   content/                Documents, TerminalMessages, Hints, PracticeLessons, RadioBriefing
   styles/main.css
-tests/                    *.test.js, tools/policies.js, tools/balanceReport.js
+tests/                    *.test.js, tools/balanceReport.js (scripted players: src/ai/ScriptedPlayers.js)
 ```
 
 ---

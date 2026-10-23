@@ -19,6 +19,8 @@ npm run dev
 
 Open http://localhost:5173. Click **Initialize terminal**, then **Practice Night** for a guided first run, or **Start Night 1**. Surviving a night unlocks the next. If you startle easily, tick **No-startle mode** on the first screen.
 
+Stuck? [`docs/GUIDE_N1.md`](docs/GUIDE_N1.md) is a step-by-step guide to surviving Night 1.
+
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Development server with hot reload. The AI debugger is enabled. |

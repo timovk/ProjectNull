@@ -19,7 +19,7 @@ npm run dev
 
 Open http://localhost:5173. Click **Initialize terminal**, then **Practice Night** for a guided first run, or **Start Night 1**. Surviving a night unlocks the next. If you startle easily, tick **No-startle mode** on the first screen.
 
-Stuck? [`docs/GUIDE_N1.md`](docs/GUIDE_N1.md) is a step-by-step guide to surviving Night 1.
+Stuck? There is a step-by-step guide for every night: [Night 1](docs/GUIDE_N1.md), [Night 2](docs/GUIDE_N2.md), [Night 3](docs/GUIDE_N3.md), [Night 4](docs/GUIDE_N4.md) and [Night 5](docs/GUIDE_N5.md). The Night 2 guide introduces six habits that the later nights depend on.
 
 | Command | What it does |
 | --- | --- |

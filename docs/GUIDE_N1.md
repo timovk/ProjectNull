@@ -162,7 +162,8 @@ You start with 100%. A careful player ends Night 1 with **about 25 to 30%** left
 | Everything else together (lights, cameras, fan, radio, base load) | about 3 to 4% per minute |
 
 - Shut doors are the biggest drain. **Open a door as soon as its doorway camera is empty.**
-- If power drops below about 12%, discharge the **auxiliary cell** in the electrical room (hold `E`) for +15%. It works once per night.
+- If power drops below about 15%, discharge the **auxiliary cell** in the electrical room (hold `E`) for +15%. It works once per night. **Its discharge is a loud bang:** only use it while the Echo is out of the vents (CAM 12 empty, no scraping).
+- Setting the station lights to **low** on the emergency power panel saves about 5% over the night and makes the station quieter. You do not need it on Night 1, but from Night 2 it helps a lot.
 - At 0% the power fails, but you do not die automatically. The doors can be braced by hand at their yellow manual release (hold `E`), and the auxiliary cell can bring the power back. Creatures are a little more aggressive in the dark.
 
 ## When things go wrong
@@ -191,4 +192,4 @@ The lesson: **on Night 1, the Echo is the creature to respect.** Everything else
 
 ---
 
-*These numbers come from the game's own simulation: 300 nights per play style, with the scripted player in `src/ai/ScriptedPlayers.js` reacting within 1.5 seconds. Real reactions are slower, so expect a little less in practice. Guides for Nights 2 to 5 will follow.*
+*These numbers come from the game's own simulation: 300 nights per play style, with the scripted player in `src/ai/ScriptedPlayers.js` reacting within 1.5 seconds. Real reactions are slower, so expect a little less in practice. Next: [Night 2](GUIDE_N2.md).*

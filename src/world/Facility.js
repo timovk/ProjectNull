@@ -258,6 +258,13 @@ export class Facility {
     kit.box(vent, 0.9, 0.04, 0.9, m.metalDark, 0, 0, 0, { tile: false });
     for (let i = -3; i <= 3; i++) kit.box(vent, 0.8, 0.03, 0.03, m.black, 0, -0.03, i * 0.11, { tile: false });
     this.refs.vent = vent;
+    const dustCount = 60;
+    const dustGeo = new THREE.BufferGeometry();
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(dustCount * 3), 3));
+    const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0xb8b0a0, size: 0.018, transparent: true, opacity: 0, depthWrite: false }));
+    dust.frustumCulled = false;
+    parent.add(dust);
+    this.refs.ventDust = { points: dust, seeds: Array.from({ length: dustCount }, () => [Math.random() - 0.5, Math.random() - 0.5, Math.random()]) };
 
     // Door control panels (door + corridor light) beside each door.
     this.refs.panels = {};

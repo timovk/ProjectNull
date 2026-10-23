@@ -93,6 +93,22 @@ export class StationPresenter {
       plane.material.uniforms.uCalm.value = this.settings.get('reducedDistortion') || this.settings.get('disableFlicker') ? 1 : 0;
     }
 
+    // Vent grille: trembles and sheds dust while something is in the duct above.
+    const echoInDuct = sim.ai.get(ENTITY_IDS.ECHO).currentRoom === 'VENT_DUCT';
+    this.ventLevel = (this.ventLevel ?? 0) + ((echoInDuct ? 1 : 0) - (this.ventLevel ?? 0)) * Math.min(1, dt * 0.8);
+    const still = this.settings.get('reducedMotion');
+    R.vent.position.x = 0.8 + (still ? 0 : Math.sin(time * 37) * 0.003 * this.ventLevel);
+    const dust = R.ventDust;
+    dust.points.material.opacity = 0.7 * this.ventLevel;
+    if (this.ventLevel > 0.01) {
+      const pos = dust.points.geometry.attributes.position;
+      dust.seeds.forEach(([sx, sz, phase], i) => {
+        const k = (time * 0.18 + phase) % 1;
+        pos.setXYZ(i, 0.8 + sx * 0.8 + Math.sin(time + i) * 0.03, 2.96 - k * 2.9, 1.4 + sz * 0.8);
+      });
+      pos.needsUpdate = true;
+    }
+
     // Other lamps.
     R.relayLamp.material.color.setHex(sim.surveillance.faults.size ? (Math.sin(time * 3) > 0 ? 0xff3020 : 0x300000) : 0x30ff60);
     R.radio.lamp.material.color.setHex(sec.radio && sec.powered ? 0xffb030 : 0x1a1a1a);

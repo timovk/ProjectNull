@@ -16,6 +16,9 @@ export const ENTITY_STATES = Object.freeze({
 
 const ALLOWED = Object.freeze({ allowed: true, reason: null });
 
+/** Minimum time at a threshold before the first entry attempt, in movement intervals. */
+export const THRESHOLD_SETTLE_INTERVALS = 1.5;
+
 /**
  * Base entity. Subclasses override the hooks (`update`, `canMove`, `aiBonus`,
  * `stimulusFactor`, `checkMovement`, `checkEntry`, `onEntryBlocked`, ...)
@@ -116,7 +119,16 @@ export class Entity {
   decide(sim) {
     if (this.state === ENTITY_STATES.RETREATING) return this.decideRetreat(sim);
     const edge = this.stationEdgeFrom(this.currentRoom, sim);
-    if (edge) return { type: 'ATTACK', to: STATION, edge };
+    if (edge) {
+      // Fairness rule: after arriving at a door or the duct, an entity settles
+      // for THRESHOLD_SETTLE_INTERVALS of its own interval before it may try to
+      // enter. The arrival is always audible/visible, so this guarantees a
+      // reaction window (Wanderer >= 10 s, Echo >= 8.4 s, Observer >= 13 s).
+      if (sim.time - this.roomEnteredAt < this.movementInterval * THRESHOLD_SETTLE_INTERVALS - 1e-9) {
+        return { type: 'STAY', reason: 'SETTLING' };
+      }
+      return { type: 'ATTACK', to: STATION, edge };
+    }
     return this.decideRoute(sim);
   }
 

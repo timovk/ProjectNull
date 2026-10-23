@@ -40,3 +40,9 @@ test('balance: every failure names the responsible entity and its route', () => 
     assert.ok(['EAST_DOOR', 'WEST_DOOR', 'VENT'].includes(result.breach.via));
   }
 });
+
+test('balance: a slow, inattentive player who knows the rules still has a fair chance', () => {
+  const factory = () => competentPolicy({ reaction: 5, observerCheckEvery: 60, echoRooms: ['VENT_DUCT'], lightsEarly: false, repairDelay: 20 });
+  const r = rate(play(factory, 'bal-distracted'));
+  assert.ok(r >= 0.6, `distracted survival ${r}`);
+});

@@ -35,7 +35,7 @@ export function doorsOnlyPolicy({ reaction = 1.5 } = {}) {
 }
 
 /** Uses every countermeasure the way the in-game documents describe. */
-export function competentPolicy({ reaction = 1.5, observerCheckEvery = 22, observerCheckFor = 3, repairDelay = 8 } = {}) {
+export function competentPolicy({ reaction = 1.5, observerCheckEvery = 22, observerCheckFor = 3, repairDelay = 8, echoRooms = ['VENT_SHAFT', 'VENT_DUCT'], lightsEarly = true } = {}) {
   const since = new Map();
   let nextObserverCheck = observerCheckEvery;
   let checkEnds = -1;
@@ -65,14 +65,14 @@ export function competentPolicy({ reaction = 1.5, observerCheckEvery = 22, obser
     // Corridor lights while the Wanderer is in or next to a corridor.
     for (const [, , corridor] of APPROACHES) {
       const w = at(WANDERER);
-      const want = held(`light:${corridor}`, w === corridor || w === 'CENTRAL_JUNCTION');
+      const want = held(`light:${corridor}`, w === corridor || (lightsEarly && w === 'CENTRAL_JUNCTION'));
       const lit = sec.corridorLights[corridor];
       if (want && !lit) sim.command({ type: 'LIGHT', room: corridor, on: true });
       if (!want && lit && !(w === corridor || w === 'CENTRAL_JUNCTION')) sim.command({ type: 'LIGHT', room: corridor, on: false });
     }
 
     // Echo in the vents: go quiet (fan + radio off). Keep the rack cool otherwise.
-    const echoNear = at(ECHO) === 'VENT_SHAFT' || at(ECHO) === 'VENT_DUCT';
+    const echoNear = echoRooms.includes(at(ECHO));
     const quiet = held('echo', echoNear) || (echoNear && since.has('echo'));
     if (quiet) {
       if (sec.fan) sim.command({ type: 'FAN', on: false });

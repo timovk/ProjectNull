@@ -13,7 +13,8 @@ const policies = {
   idle: () => idlePolicy(),
   doorsOnly: () => doorsOnlyPolicy(),
   competent: () => competentPolicy(),
-  competentSlow: () => competentPolicy({ reaction: 3.5, observerCheckEvery: 40 })
+  competentSlow: () => competentPolicy({ reaction: 3.5, observerCheckEvery: 40 }),
+  distracted: () => competentPolicy({ reaction: 5, observerCheckEvery: 60, echoRooms: ['VENT_DUCT'], lightsEarly: false, repairDelay: 20 })
 };
 
 const started = Date.now();

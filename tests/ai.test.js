@@ -9,12 +9,13 @@ import { STATION } from '../src/config/FacilityLayout.js';
 const { WANDERER, OBSERVER, ECHO, PATIENT } = ENTITY_IDS;
 const ZERO = { SUBJECT_01: [0], SUBJECT_02: [0], SUBJECT_03: [0], SUBJECT_04: [0] };
 
+/** Test placement: the entity counts as having arrived long ago (settled). */
 function place(entity, room, state = 'ROAMING') {
   entity.currentRoom = room;
   entity.state = state;
   entity.frustration = 0;
   entity.retreatPath = null;
-  entity.roomEnteredAt = 0;
+  entity.roomEnteredAt = -1000;
 }
 
 function quietStation(sim, { keepRack = false } = {}) {
@@ -230,6 +231,35 @@ test('patience: blocked attempts before retreat = 1 + floor(patience/4)', () => 
 });
 
 // ------------------------------------------------------------ countermeasures
+
+test('fairness: an entity settles at a threshold for 1.5 intervals before its first entry attempt', () => {
+  const sim = new Simulation({ seed: 'settle' });
+  const w = sim.ai.get(WANDERER);
+  w.setAILevel(20);
+  place(w, 'EAST_APPROACH', 'WAITING');
+  w.roomEnteredAt = sim.time; // just arrived
+  const first = runMovementOpportunity(w, sim);
+  assert.equal(first.rollSuccess, true);
+  assert.equal(first.outcome, OUTCOMES.STAYED);
+  assert.equal(first.reason, 'SETTLING');
+  assert.equal(sim.phase, 'RUNNING');
+  // Simulate the passage of 1.5 intervals: now it may enter.
+  w.roomEnteredAt = sim.time - w.movementInterval * 1.5;
+  assert.equal(runMovementOpportunity(w, sim).outcome, OUTCOMES.ATTACK_SUCCESS);
+});
+
+test('fairness: from arrival at a door to a breach takes at least two Wanderer intervals', () => {
+  for (let i = 0; i < 20; i++) {
+    const sim = new Simulation({ seed: `window-${i}`, schedule: { SUBJECT_01: [20], SUBJECT_02: [0], SUBJECT_03: [0], SUBJECT_04: [0] } });
+    sim.facility.gates.CELL_A_LOCK.open = true;
+    let arrivedAt = null;
+    sim.bus.on('entity:moved', ({ entityId, to }) => {
+      if (entityId === WANDERER && to.endsWith('APPROACH')) arrivedAt = sim.time;
+    });
+    sim.runFor(200);
+    if (sim.phase === 'BREACHED') assert.ok(sim.breach.time - arrivedAt >= 2 * 5 - 1e-6, `window ${sim.breach.time - arrivedAt}`);
+  }
+});
 
 test('closed security doors stop the Wanderer and the Observer', () => {
   for (const id of [WANDERER, OBSERVER]) {

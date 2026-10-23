@@ -38,9 +38,14 @@ export class HUD {
   }
 
   update(sim, interaction, fps, showFps) {
-    this.clock.innerHTML = `${formatGameClock(sim.gameHours)}<small>NIGHT 1</small>`;
+    const clock = formatGameClock(sim.gameHours);
+    if (clock !== this.lastClock) {
+      this.lastClock = clock;
+      this.clock.innerHTML = `${clock}<small>NIGHT 1</small>`;
+    }
     const lvl = sim.power.level;
-    this.pct.textContent = `${Math.max(0, lvl).toFixed(0)}%`;
+    const pct = `${Math.max(0, lvl).toFixed(0)}%`;
+    if (pct !== this.pct.textContent) this.pct.textContent = pct;
     this.pct.classList.toggle('low', lvl < 20);
     const bars = Math.min(5, Math.ceil((sim.power.drainPerSecond / 0.065) * 1.2));
     [...this.usage.children].forEach((b, i) => {

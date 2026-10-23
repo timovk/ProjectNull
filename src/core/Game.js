@@ -415,6 +415,7 @@ export class Game {
     this.player.focus(SEAT_POS, SEAT_TARGET);
     this.workstation.setTab(tab);
     this.workstation.show(true);
+    this.nextWsUpdate = 0;
     this.hud.setDimmed(true);
     this.command({ type: 'VIEW', viewing: true });
     this.command({ type: 'PLAYER', walking: false });
@@ -447,6 +448,8 @@ export class Game {
     if (r.ok) {
       this.audio.uiSwitch();
       this.feedDisruption = 0.45;
+      this.nextWsUpdate = 0;
+      this.nextFeed = 0;
     }
   }
 
@@ -634,7 +637,10 @@ export class Game {
     if (playing || this.state === STATES.FAILING) {
       this.updateWarnings(sim);
       this.hud.update(sim, this.interaction, this.fps, this.settings.get('showFps'));
-      if (this.workstationOpen) this.workstation.update(sim, this.messages);
+      if (this.workstationOpen && (!this.nextWsUpdate || time > this.nextWsUpdate)) {
+        this.nextWsUpdate = time + 0.2; // DOM-heavy: 5 Hz is plenty
+        this.workstation.update(sim, this.messages);
+      }
     }
     this.subtitles.update();
     this.hints.update();

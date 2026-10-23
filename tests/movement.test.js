@@ -113,6 +113,7 @@ test('blocked, invalid and failed outcomes are recorded distinctly in the log', 
   w.setAILevel(20);
   w.currentRoom = 'EAST_APPROACH';
   w.state = 'WAITING';
+  w.roomEnteredAt = -1000; // long settled at the door
   sim.command({ type: 'DOOR', door: 'EAST_DOOR', closed: true });
   const rec = runMovementOpportunity(w, sim);
   assert.equal(rec.rollSuccess, true);

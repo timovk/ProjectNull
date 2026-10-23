@@ -57,6 +57,49 @@ export const AI_SCHEDULE = {
 };
 
 /**
+ * The five-night campaign. Night 1 is AI_SCHEDULE. Nights 2-5 were tuned by
+ * simulation (200 nights each) to a falling survival curve for the scripted
+ * expert player; see NIGHT_MEASURED_SURVIVAL.
+ */
+export const NIGHT_COUNT = 5;
+export const NIGHT_SCHEDULES = {
+  1: AI_SCHEDULE,
+  2: {
+    [ENTITY_IDS.WANDERER]: [5, 6, 7, 8, 9, 11],
+    [ENTITY_IDS.OBSERVER]: [4, 5, 6, 7, 8, 10],
+    [ENTITY_IDS.ECHO]: [3, 4, 5, 6, 7, 9],
+    [ENTITY_IDS.PATIENT]: [1, 2, 3, 4, 5, 7]
+  },
+  3: {
+    [ENTITY_IDS.WANDERER]: [7, 8, 9, 10, 11, 13],
+    [ENTITY_IDS.OBSERVER]: [6, 7, 8, 9, 10, 12],
+    [ENTITY_IDS.ECHO]: [5, 6, 7, 8, 9, 11],
+    [ENTITY_IDS.PATIENT]: [3, 4, 5, 6, 7, 9]
+  },
+  4: {
+    [ENTITY_IDS.WANDERER]: [8, 9, 11, 12, 13, 15],
+    [ENTITY_IDS.OBSERVER]: [7, 8, 10, 11, 12, 14],
+    [ENTITY_IDS.ECHO]: [6, 7, 9, 10, 11, 13],
+    [ENTITY_IDS.PATIENT]: [4, 5, 7, 8, 9, 11]
+  },
+  5: {
+    [ENTITY_IDS.WANDERER]: [9, 11, 12, 14, 15, 17],
+    [ENTITY_IDS.OBSERVER]: [8, 10, 11, 13, 14, 16],
+    [ENTITY_IDS.ECHO]: [7, 9, 10, 12, 13, 15],
+    [ENTITY_IDS.PATIENT]: [5, 7, 8, 10, 11, 13]
+  }
+};
+
+/** Survival of the scripted expert / distracted players, 200 simulated nights each. */
+export const NIGHT_MEASURED_SURVIVAL = {
+  1: { expert: 98, distracted: 97 },
+  2: { expert: 87, distracted: 91 },
+  3: { expert: 73, distracted: 75 },
+  4: { expert: 59, distracted: 63 },
+  5: { expert: 42, distracted: 54 }
+};
+
+/**
  * Guided practice night: gentler levels, but every subject (including the
  * Patient, from 1 AM) shows up so each lesson can trigger.
  */
@@ -150,7 +193,7 @@ export const BLACKOUT_AI_BONUS = 2;
 export const POWER_CONFIG = {
   initial: 100,
   drain: {
-    facilityBase: 0.026,
+    facilityBase: 0.018,
     stationLightsNormal: 0.010,
     stationLightsLow: 0.003,
     workstationRack: 0.015,
@@ -159,7 +202,7 @@ export const POWER_CONFIG = {
     radio: 0.002,
     doorClosed: 0.110,
     corridorLight: 0.055,
-    barrier: 0.300
+    barrier: 0.150
   },
   pingCost: 1.5,
   relayResetCost: 0.5,
@@ -180,7 +223,7 @@ export const NOISE_CONFIG = {
     barrier: 0.28,
     playerWalking: 0.05,
     playerWorking: 0.20,
-    doorPulse: 0.35,
+    doorPulse: 0.12,
     doorPulseTau: 1.5,
     auxCellPulse: 0.30,
     auxCellPulseTau: 4.0

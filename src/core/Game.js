@@ -32,10 +32,11 @@ import { RadioBriefing } from '../ui/RadioBriefing.js';
 import { customSchedule, customLabel } from '../ui/CustomNight.js';
 import { el, showScreen } from '../ui/dom.js';
 import { HINTS } from '../content/Hints.js';
-import { GATE_MESSAGES, VICTORY_LINES } from '../content/TerminalMessages.js';
+import { GATE_MESSAGES, victoryLines } from '../content/TerminalMessages.js';
+import { Progress } from './Progress.js';
 import { TAPE_TRANSCRIPT } from '../content/Documents.js';
 import { ROOMS } from '../config/FacilityLayout.js';
-import { ENTITY_IDS, PRACTICE_SCHEDULE } from '../config/GameConfig.js';
+import { ENTITY_IDS, PRACTICE_SCHEDULE, NIGHT_SCHEDULES, NIGHT_COUNT } from '../config/GameConfig.js';
 
 const FAILURE_SECONDS = 10;
 const VICTORY_SECONDS = 9;
@@ -58,7 +59,10 @@ export class Game {
     this.fixedSeed = this.params.get('seed');
     this.fsm = new GameStateMachine(STATES.SPLASH);
     this.timeScale = 1;
-    this.mode = 'NIGHT'; // 'NIGHT' | 'PRACTICE'
+    this.mode = 'NIGHT'; // 'NIGHT' | 'PRACTICE' | 'CUSTOM'
+    this.night = 1;
+    // ?debug=1 or ?unlock=all opens every night for testing; dev builds keep the real locks.
+    this.progress = new Progress({ unlockAll: this.params.has('debug') || this.params.get('unlock') === 'all' });
     this.feedDip = 0;
     this.messages = [];
     this.tmpVec = new THREE.Vector3();
@@ -148,7 +152,11 @@ export class Game {
     });
     this.menu = new MainMenu(ui, {
       onBegin: () => this.begin(),
-      onStart: () => this.startNight('NIGHT'),
+      onStart: (night) => {
+        this.night = Math.max(1, Math.min(NIGHT_COUNT, night ?? 1));
+        this.startNight('NIGHT');
+      },
+      progress: this.progress,
       onPractice: () => this.startNight('PRACTICE'),
       onCustom: (levels) => {
         this.customLevels = levels;
@@ -169,7 +177,15 @@ export class Game {
       onRestart: () => this.startNight(this.mode),
       onExit: () => this.toMenu()
     });
-    this.endScreen = new EndScreen(ui, { onRetry: () => this.startNight(this.mode), onNight: () => this.startNight('NIGHT'), onMenu: () => this.toMenu() });
+    this.endScreen = new EndScreen(ui, {
+      onRetry: () => this.startNight(this.mode),
+      onNight: () => {
+        // Practice -> Night 1; a survived night -> the next one.
+        this.night = this.endNext ?? 1;
+        this.startNight('NIGHT');
+      },
+      onMenu: () => this.toMenu()
+    });
     this.debugger = new AIDebugger(ui, this);
     void controlsGrid;
   }
@@ -308,7 +324,9 @@ export class Game {
 
     this.bus.clear();
     this.subscribe();
-    this.sim = new Simulation({ seed: this.newSeed(), bus: this.bus, practice, schedule: practice ? PRACTICE_SCHEDULE : custom ? customSchedule(levels) : undefined });
+    const nightSchedule = NIGHT_SCHEDULES[this.night] ?? NIGHT_SCHEDULES[1];
+    this.sim = new Simulation({ seed: this.newSeed(), bus: this.bus, practice, schedule: practice ? PRACTICE_SCHEDULE : custom ? customSchedule(levels) : nightSchedule });
+    this.endNext = null;
     this.soundscape = new EntitySoundscape(this);
     this.cameraSpeaker.reset();
     this.entities.reset();
@@ -322,11 +340,11 @@ export class Game {
     this.workstation.setPracticeMap(practice);
     if (practice) this.coach.start();
     else this.coach.stop();
-    this.radio.start(!practice && !custom && this.settings.get('radioBriefing'));
-    this.hud.setNightLabel(practice ? 'PRACTICE' : custom ? customLabel(levels) : 'NIGHT 1');
+    this.radio.start(!practice && !custom && this.night === 1 && this.settings.get('radioBriefing'));
+    this.hud.setNightLabel(practice ? 'PRACTICE' : custom ? customLabel(levels) : `NIGHT ${this.night}`);
     this.endScreen.setRun(custom
       ? { label: `Custom night ${levels.join('/')}`, retry: 'RETRY CUSTOM NIGHT', again: 'PLAY IT AGAIN' }
-      : { label: 'Night 1', retry: 'RETRY NIGHT 1', again: 'PLAY NIGHT 1 AGAIN' });
+      : { label: `Night ${this.night}`, retry: `RETRY NIGHT ${this.night}`, again: `PLAY NIGHT ${this.night} AGAIN` });
     this.feedDip = 0;
     this.debugger.resetLog();
     this.messages = [];
@@ -605,8 +623,9 @@ export class Game {
   updateVictory(dt) {
     const v = this.victory;
     v.t += dt;
-    while (v.lines < VICTORY_LINES.length && v.t > 0.8 + v.lines * 1.2) {
-      this.pushMessage(VICTORY_LINES[v.lines], 'facility', v.lines === 0);
+    const lines = victoryLines(this.mode === 'NIGHT' ? this.night : 1);
+    while (v.lines < lines.length && v.t > 0.8 + v.lines * 1.2) {
+      this.pushMessage(lines[v.lines], 'facility', v.lines === 0);
       v.lines++;
     }
     if (v.t > VICTORY_SECONDS - 2.6 && !v.fading) {
@@ -624,6 +643,10 @@ export class Game {
       if (this.mode === 'PRACTICE') {
         this.endScreen.showPracticeComplete(this.sim.getSummary(), this.coach.lessonsDone);
         this.coach.stop();
+      } else if (this.mode === 'NIGHT') {
+        const next = this.progress.complete(this.night);
+        this.endNext = next;
+        this.endScreen.showVictory(this.sim.getSummary(), { lines: victoryLines(this.night), next, final: this.night >= NIGHT_COUNT });
       } else this.endScreen.showVictory(this.sim.getSummary());
     }
   }

@@ -405,8 +405,15 @@ test('Echo: can only drop into a noisy station', () => {
   const blocked = runMovementOpportunity(e, sim);
   assert.equal(blocked.outcome, OUTCOMES.ATTACK_BLOCKED);
   assert.equal(blocked.reason, 'SILENCE');
-  // Closing a door is loud.
+  // In a fully quiet station, a moving door alone stays under the line...
   sim.command({ type: 'DOOR', door: 'EAST_DOOR', closed: true });
+  sim.noise.update(0);
+  assert.ok(sim.noise.stationNoise < e.listenThreshold(), `door in a quiet station ${sim.noise.stationNoise}`);
+  place(e, 'VENT_DUCT', 'LISTENING');
+  assert.equal(runMovementOpportunity(e, sim).reason, 'SILENCE');
+  // ...but the ventilation fan is loud enough to let it in.
+  sim.command({ type: 'RACK', on: true });
+  sim.command({ type: 'FAN', on: true });
   sim.noise.update(0);
   assert.ok(sim.noise.stationNoise >= e.listenThreshold());
   place(e, 'VENT_DUCT', 'LISTENING');

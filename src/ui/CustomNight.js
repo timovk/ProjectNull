@@ -7,17 +7,16 @@ const STORAGE_KEY = 'project-null.custom.v1';
 const ESTIMATE_NIGHTS = 24;
 
 /**
- * Presets, named after measured skilled-player survival (40 simulated nights
- * each): Night 1 average ~95%, Gentle ~88%, Hard ~45%, Nightmare ~20%,
- * No Patient 10s ~80%, 20/20/20/20 0%. A Patient awake all night (field
- * power) is what makes high levels unwinnable.
+ * Presets, named after measured skilled-player survival on the rebalanced
+ * economy (80 simulated nights each): Night 1 average ~99%, Gentle ~93%,
+ * Tense ~81%, Hard ~46%, Nightmare ~21%, 20/20/20/20 ~3%.
  */
 export const CUSTOM_PRESETS = [
   ['Night 1 average', [5, 4, 3, 1]],
   ['Gentle', [3, 3, 3, 3]],
-  ['Hard', [5, 5, 5, 5]],
-  ['Nightmare', [7, 7, 7, 7]],
-  ['10s, no Patient', [10, 10, 10, 0]],
+  ['Tense', [5, 5, 5, 5]],
+  ['Hard', [8, 8, 8, 8]],
+  ['Nightmare', [12, 12, 12, 12]],
   ['20/20/20/20', [20, 20, 20, 20]]
 ];
 

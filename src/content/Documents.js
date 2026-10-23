@@ -106,7 +106,7 @@ export const DOCUMENTS = {
       '',
       'When S-04 is at a door, engage the field and HOLD it until the subject withdraws (approximately 20 seconds). Releasing early resets most of the progress.',
       '',
-      'Power draw is severe (approx. 18% per minute). The field is audible.'
+      'Power draw is heavy (approx. 9% per minute). The field is audible.'
     ]
   },
   sublevel_note: {

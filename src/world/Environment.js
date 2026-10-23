@@ -1,4 +1,4 @@
-import { TERMINAL_SCHEDULE } from '../content/TerminalMessages.js';
+import { terminalSchedule } from '../content/TerminalMessages.js';
 
 /**
  * Presentation-only environmental events: distant sounds, light stutters,
@@ -23,7 +23,7 @@ export class Environment {
     const t = sim.time;
     const hours = sim.gameHours;
 
-    for (const msg of TERMINAL_SCHEDULE) {
+    for (const msg of terminalSchedule(g.mode === 'NIGHT' ? g.night : 1)) {
       if (!this.sentMessages.has(msg.id) && hours >= msg.at) {
         this.sentMessages.add(msg.id);
         g.pushMessage(msg.text, msg.kind ?? 'facility');

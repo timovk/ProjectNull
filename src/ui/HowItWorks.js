@@ -1,6 +1,6 @@
 import { el, showScreen } from './dom.js';
 import {
-  GAME_CONFIG, AI_SCHEDULE, PRACTICE_SCHEDULE, ENTITY_DEFS, ENTITY_ORDER, ENTITY_IDS,
+  GAME_CONFIG, PRACTICE_SCHEDULE, ENTITY_DEFS, ENTITY_ORDER, ENTITY_IDS, NIGHT_SCHEDULES, NIGHT_MEASURED_SURVIVAL,
   RETREAT_AI_FLOOR, BLACKOUT_AI_BONUS, POWER_CONFIG, NOISE_CONFIG, SURVEILLANCE_CONFIG,
   FACILITY_EVENT_CONFIG, FIXED_TIMESTEP, CLOCK_CONFIG
 } from '../config/GameConfig.js';
@@ -226,8 +226,18 @@ function sectionNight() {
       <p>A night lasts <b>${GAME_CONFIG.nightDurationSeconds} real seconds</b> (${(GAME_CONFIG.nightDurationSeconds / 60).toFixed(0)} minutes), so one in-game hour is <b>${HOUR.toFixed(0)} seconds</b>. AI levels change exactly on the hour.</p>
       <p>The game time only advances while you are playing. Pausing, or the window losing focus, stops it. The desk computer and documents do <i>not</i> pause it.</p>
     `),
-    h('AI SCHEDULE, NIGHT 1'),
-    table(hoursHead, ENTITY_ORDER.map((id) => [`${ENTITY_DEFS[id].designation} ${short(id)}`, ...AI_SCHEDULE[id]])),
+    h('THE FIVE NIGHTS'),
+    prose(`<p>Each night raises every subject's level hour by hour. Nights 2 to 5 were tuned by simulating 200 nights each, so that survival falls steadily. "Expert" is the scripted player that reacts in 1.5 s; "distracted" reacts in 5 s and checks the Observer only once a minute. Both see every subject at once, which no human can, so expect lower numbers yourself.</p>`),
+    table(['Night', 'Expert survives', 'Distracted survives', 'Highest level (5 AM)'], Object.keys(NIGHT_SCHEDULES).map((n) => [
+      n,
+      `${NIGHT_MEASURED_SURVIVAL[n].expert}%`,
+      `${NIGHT_MEASURED_SURVIVAL[n].distracted}%`,
+      ENTITY_ORDER.map((id) => NIGHT_SCHEDULES[n][id][5]).join(' / ')
+    ])),
+    ...Object.keys(NIGHT_SCHEDULES).flatMap((n) => [
+      h(`AI SCHEDULE, NIGHT ${n}`),
+      table(hoursHead, ENTITY_ORDER.map((id) => [`${ENTITY_DEFS[id].designation} ${short(id)}`, ...NIGHT_SCHEDULES[n][id]]))
+    ]),
     h('AI SCHEDULE, PRACTICE NIGHT'),
     table(hoursHead, ENTITY_ORDER.map((id) => [`${ENTITY_DEFS[id].designation} ${short(id)}`, ...PRACTICE_SCHEDULE[id]])),
     h('LOCKED DOORS THAT OPEN ON THEIR OWN'),
@@ -466,7 +476,8 @@ function sectionStrategy() {
       <li><b>Lure with pings.</b> A ping in a far room (the Research Hall, say) costs ${POWER_CONFIG.pingCost}% and pulls the Echo toward it. Informed decisions (${pct(BM.informedChance(ENTITY_DEFS[ECHO].attributes.intelligence))} of them) see through it.</li>
       <li><b>Save the auxiliary cell.</b> It works even at 0%, so keeping it for a late power failure buys you the last stretch.</li>
     </ol>
-    <p>With these habits, a scripted player that sees everything survives about 9 nights in 10 across 100 random seeds. A player that does nothing survives none.</p>
+    <p>With these habits, a scripted player that sees everything survives Night 1 ${NIGHT_MEASURED_SURVIVAL[1].expert}% of the time and Night 5 ${NIGHT_MEASURED_SURVIVAL[5].expert}%. A player that does nothing survives none.</p>
+    <p><b>Why higher levels get hard.</b> No subject is hard on its own: a scripted player beats any single one at AI 20. Difficulty comes from two shared limits. Power is one: every defence draws from one battery, so the more often subjects come, the sooner it runs out. The Echo is the other: the more the others force you to move doors or use the field, the more noise you make while it listens.</p>
   `));
   return node;
 }

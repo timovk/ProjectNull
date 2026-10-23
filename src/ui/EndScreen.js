@@ -1,6 +1,7 @@
 import { el, showScreen } from './dom.js';
 import { formatDuration, formatGameClock } from '../core/GameClock.js';
 import { VICTORY_LINES } from '../content/TerminalMessages.js';
+import { NIGHT_COUNT } from '../config/GameConfig.js';
 
 const CAUSES = {
   SUBJECT_01: {
@@ -70,6 +71,7 @@ export class EndScreen {
 
   showPracticeComplete(summary, lessonsDone) {
     this.retryBtn.textContent = 'PRACTICE AGAIN';
+    this.nightBtn.textContent = 'START NIGHT 1';
     this.nightBtn.classList.remove('hidden');
     this.body.replaceChildren(
       el('h1', { class: 'end-title won', text: 'PRACTICE COMPLETE' }),
@@ -89,13 +91,14 @@ export class EndScreen {
     showScreen(this.node, true);
   }
 
-  showVictory(summary) {
+  showVictory(summary, { lines: victory = VICTORY_LINES, next = null, final = false } = {}) {
     const run = this.run ?? { label: 'Night 1', again: 'PLAY NIGHT 1 AGAIN' };
     this.retryBtn.textContent = run.again;
-    this.nightBtn.classList.add('hidden');
-    const lines = el('div', { class: 'terminal-lines' }, VICTORY_LINES.map((t, i) => el('div', { text: `> ${t}`, style: { animationDelay: `${0.6 + i * 1.1}s` } })));
+    this.nightBtn.classList.toggle('hidden', !next);
+    if (next) this.nightBtn.textContent = `CONTINUE TO NIGHT ${next}`;
+    const lines = el('div', { class: 'terminal-lines' }, victory.map((t, i) => el('div', { text: `> ${t}`, style: { animationDelay: `${0.6 + i * 1.1}s` } })));
     this.body.replaceChildren(
-      el('h1', { class: 'end-title won', text: 'SHIFT COMPLETE' }),
+      el('h1', { class: 'end-title won', text: final ? 'THE LAST NIGHT IS OVER' : 'SHIFT COMPLETE' }),
       el('div', { class: 'end-sub', text: `${run.label.toUpperCase()} / 6:00 AM` }),
       lines,
       el('div', { class: 'stats' }, statRows([
@@ -112,7 +115,12 @@ export class EndScreen {
         ['Repairs / relay resets', `${summary.repairs} / ${summary.relayResets}`],
         ['Movement opportunities simulated', summary.opportunities],
         ['Seed', summary.seed]
-      ]))
+      ])),
+      final
+        ? el('div', { class: 'end-note', text: `You survived all ${NIGHT_COUNT} nights. The facility has stopped asking for a contractor. Somewhere below Level 2, a fifth door is standing open.` })
+        : next
+          ? el('div', { class: 'end-note', text: `Night ${next} is now unlocked. The subjects will be more active.` })
+          : ''
     );
     showScreen(this.node, true);
   }

@@ -1,8 +1,8 @@
 # PROJECT NULL
 
-**Version 0.3.0 — The First Night**
+**Version 0.3.0 — Five Nights**
 
-A first-person psychological horror game set in Research Facility N-17, built with HTML, CSS, JavaScript and Three.js. You are a contract technician in a security station from 12 AM to 6 AM. Four subjects move through the facility. Their behaviour is driven by a transparent, testable **movement-opportunity simulation**, not by scripts.
+A first-person psychological horror game set in Research Facility N-17, built with HTML, CSS, JavaScript and Three.js. You are a contract technician in a security station from 12 AM to 6 AM, for five nights. Four subjects move through the facility. Their behaviour is driven by a transparent, testable **movement-opportunity simulation**, not by scripts.
 
 There are **no jumpscares**: no sudden faces, no loud stingers, no fast camera moves, no flashing images. Failure is a slow fade.
 
@@ -17,7 +17,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Click **Initialize terminal**, then **Practice Night** for a guided first run, or **Start Night 1**. If you startle easily, tick **No-startle mode** on the first screen.
+Open http://localhost:5173. Click **Initialize terminal**, then **Practice Night** for a guided first run, or **Start Night 1**. Surviving a night unlocks the next. If you startle easily, tick **No-startle mode** on the first screen.
 
 | Command | What it does |
 | --- | --- |
@@ -30,7 +30,8 @@ Open http://localhost:5173. Click **Initialize terminal**, then **Practice Night
 URL parameters:
 
 - `?seed=anything` makes a night reproducible. The same seed and the same actions give the same AI outcomes.
-- `?debug=1` enables the AI debugger in a production build.
+- `?debug=1` enables the AI debugger in a production build, and unlocks every night.
+- `?unlock=all` unlocks every night without the debugger.
 
 ### Deploying to GitHub Pages
 
@@ -63,22 +64,52 @@ URL parameters:
 
 The main menu has a **How It Works** screen for anyone who wants the maths. It covers the d20 roll and what each AI level means, the night's schedule and timed gates, every subject's numbers and counters, the four traits and global rules, power and noise, a strategy guide, and the engine internals. It includes three live calculators: the roll odds and arrival times, route-choice probabilities by aggression, and a station console simulator for noise and power drain. Every number is computed from the game's own config, and `tests/howitworks.test.js` checks the calculators against the simulation.
 
+## The five nights
+
+Night progress is saved in the browser. Each night raises every subject's level hour by hour, and each adds a few terminal messages about cell 05. Night 5 ends differently.
+
+| Night | 12 AM levels (W/O/E/P) | 5 AM levels | Expert survives | Distracted survives |
+| --- | --- | --- | --- | --- |
+| 1 | 3/2/1/0 | 7/6/5/3 | 98% | 97% |
+| 2 | 5/4/3/1 | 11/10/9/7 | 87% | 91% |
+| 3 | 7/6/5/3 | 13/12/11/9 | 73% | 75% |
+| 4 | 8/7/6/4 | 15/14/13/11 | 59% | 63% |
+| 5 | 9/8/7/5 | 17/16/15/13 | 42% | 54% |
+
+The survival figures are for scripted players over 200 simulated nights each. "Expert" reacts in 1.5 s, and "distracted" reacts in 5 s and checks the Observer once a minute. Both see every subject at once, so humans should expect lower numbers. The full hourly schedules are in `NIGHT_SCHEDULES` in `src/config/GameConfig.js`, and on the How It Works screen.
+
+### How the curve was tuned
+
+No single subject is hard on its own: a scripted player beats any one of them at AI 20. Difficulty comes from two shared limits:
+
+- **Power.** Every defence draws from one battery. The more often subjects come, the sooner it runs out.
+- **The Echo.** The more the others force you to move doors or use the field, the more noise you make while it listens.
+
+With the original economy these limits made a cliff around AI 8: all-8s survived 7% and all-10s 0%. Three changes turned that cliff into a slope:
+
+- The containment field costs half as much, 0.15%/s instead of 0.30%/s.
+- The facility base load is lower, 0.018%/s instead of 0.026%/s.
+- Moving doors are quieter: +12 dBn instead of +35, so in a fully silent station a door alone no longer lets the Echo in.
+
+Then one difficulty knob, which scales every subject's opening and 5 AM levels, was swept and each night was placed on the resulting curve.
+
 ## Custom Night
 
-**Custom Night** on the main menu lets you set each subject's AI level from 0 to 20. The levels stay fixed from 12 AM to 6 AM. As you move the sliders, the screen plays 24 headless nights with the scripted expert player and shows how often it survives, from COMFORTABLE to IMPOSSIBLE. Measured over 40 nights each:
+**Custom Night** on the main menu lets you set each subject's AI level from 0 to 20. The levels stay fixed from 12 AM to 6 AM. As you move the sliders, the screen plays 24 headless nights with the scripted expert player and shows how often it survives, from COMFORTABLE to IMPOSSIBLE. Measured over 80 nights each:
 
 | Levels | Skilled-player survival |
 | --- | --- |
-| 5/4/3/1 (Night 1 average) | 95% |
-| 3/3/3/3 | 88% |
-| 5/5/5/5 | 45% |
-| 7/7/7/7 | 20% |
-| 8/8/8/8 | 3% |
-| 10/10/10/0 | 80% |
-| 10/10/10/10 | 0% |
-| 20/20/20/20 | 0% |
+| 5/4/3/1 (Night 1 average) | 99% |
+| 3/3/3/3 | 93% |
+| 5/5/5/5 | 81% |
+| 7/7/7/7 | 73% |
+| 8/8/8/8 | 46% |
+| 10/10/10/10 | 28% |
+| 12/12/12/12 | 21% |
+| 15/15/15/15 | 10% |
+| 20/20/20/20 | 3% |
 
-The Patient is the deciding factor at high levels. Awake all night, it comes back so often that the containment field alone empties the battery. Even a perfect player who can see the Echo's hidden timer survives only about 1 night in 200 at 20/20/20/20.
+20/20/20/20 is meant as a near-impossible challenge.
 
 ## Ambience
 
@@ -120,14 +151,14 @@ Every system draws from one power cell:
 
 | System | Drain (%/s) | Notes |
 | --- | --- | --- |
-| Facility base load | 0.026 | Always on. |
+| Facility base load | 0.018 | Always on. |
 | Station lights | 0.010 normal, 0.003 low | Set on the emergency power panel. |
 | Surveillance rack | 0.015 | Plus 0.020 while you watch a feed. |
 | Ventilation fan | 0.008 | Keeps the camera rack from overheating. |
 | Radio | 0.002 | Its interference rises as entities come closer. |
 | Each closed door | 0.110 | |
 | Each corridor light | 0.055 | |
-| Containment field | 0.300 | About 18% per minute. |
+| Containment field | 0.150 | About 9% per minute. |
 
 At 0% power everything shuts down and emergency lighting comes on. **This is not an automatic death.** Doors can be braced by hand by holding `E` on their yellow manual release. The auxiliary cell can restore 15% once.
 
@@ -170,7 +201,7 @@ A successful roll is **not** a move. The log keeps these outcomes distinct: `ROL
 
 ### AI level schedule (Night 1)
 
-These values live in `AI_SCHEDULE` in `src/config/GameConfig.js`.
+These values live in `AI_SCHEDULE` in `src/config/GameConfig.js`. Nights 2 to 5 are in `NIGHT_SCHEDULES`.
 
 | Entity | 12 AM | 1 AM | 2 AM | 3 AM | 4 AM | 5 AM |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -255,7 +286,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 
 ## Tests and balance
 
-`npm test` runs 97 tests in about 8 seconds:
+`npm test` runs 101 tests in about 9 seconds:
 
 - **Probability.** Over 100,000 trials, AI 0 succeeds exactly 0% of the time and AI 20 exactly 100%. AI 10 converges to 50%, AI 5 to 25%, and every level 0–20 to AI/20. The d20 is uniform.
 - **Pipeline.** Successful rolls and successful moves are counted separately. Blocked and invalid outcomes are distinct.
@@ -264,17 +295,18 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 - **AI.** Independent timers, the schedule, AI caps, deterministic simultaneous ordering, seed determinism and exact replay. Every attribute formula and every entity countermeasure is checked.
 - **Power.** Each drain, failure without automatic death, the manual brace, the auxiliary cell and thermal shutdown.
 - **Balance.** Scripted players over 40 seeds each, plus the fairness rules.
+- **Campaign.** Each night is never easier than the one before, Night 1 stays gentle, and Night 5 stays winnable. Saved progress unlocks nights in order.
 - **Practice.** A practice breach is logged and sends the creature home without ending the night. A real night never uses that reset.
 
-Results from `npm run balance` over 100 seeds:
+Night 1 results from `npm run balance` over 200 seeds:
 
 | Scripted player | Survival |
 | --- | --- |
 | Does nothing | 0% |
-| Only closes doors | 4% |
-| Uses every countermeasure, 1.5 s reactions | 92% |
-| Slow (3.5 s reactions, checks the Observer every 40 s) | 92% |
-| Distracted (5 s reactions, notices the Echo only when it is directly overhead) | 92% |
+| Only closes doors | 7% |
+| Uses every countermeasure, 1.5 s reactions | 98% |
+| Slow (3.5 s reactions, checks the Observer every 40 s) | 98% |
+| Distracted (5 s reactions, notices the Echo only when it is directly overhead) | 97% |
 
 The scripted players see every entity at once, which no human can. Expect real first attempts to go worse.
 
@@ -299,7 +331,7 @@ Every gameplay-relevant sound has a textual cue. Flicker never carries informati
 src/
   main.js                 entry point
   config/                 GameConfig (balance), FacilityLayout (graph data)
-  core/                   Simulation, GameClock, Random, EventBus, EventLog, Game, GameState
+  core/                   Simulation, GameClock, Random, EventBus, EventLog, Game, GameState, Progress
   ai/                     Entity, MovementOpportunity, MovementGraph, BehaviorModifiers, AIManager
   ai/entities/            Wanderer, Observer, Echo, Patient
   systems/                Power, Security, Surveillance, Noise, FacilityEvents, NightProgression,
@@ -320,7 +352,7 @@ tests/                    *.test.js, tools/balanceReport.js (scripted players: s
 
 ## Known limitations
 
-- There is one night. Custom-night difficulty is not exposed in the UI, though `AI_SCHEDULE` and the `Simulation({ schedule })` option support it.
+- Nights 2 to 5 differ from Night 1 in AI levels and story text only. They add no new mechanics yet.
 - Art and audio are fully procedural. Entity models are stylized primitives, and there is no voice acting. The audio log plays as a transcript over tape hiss.
 - The game targets desktop browsers with a mouse and keyboard. There is no touch or gamepad input.
 - Balance was tuned against scripted players and a short browser pass, not human playtests.

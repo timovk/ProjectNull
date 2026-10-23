@@ -66,7 +66,7 @@ URL parameters:
 
 ## How It Works screen
 
-The main menu has a **How It Works** screen for anyone who wants the maths. It covers the d20 roll and what each AI level means, the night's schedule and timed gates, every subject's numbers and counters, the four traits and global rules, power and noise, a strategy guide, and the engine internals. It includes three live calculators: the roll odds and arrival times, route-choice probabilities by aggression, and a station console simulator for noise and power drain. Every number is computed from the game's own config, and `tests/howitworks.test.js` checks the calculators against the simulation.
+The main menu has a **How It Works** screen for anyone who wants the maths. It covers the d20 roll and what each AI level means, the night's schedule and timed gates, every subject's numbers and counters, the four traits and global rules, power and noise, a strategy guide (the basics plus the six habits from the night guides), and the engine internals. It includes three live calculators: the roll odds and arrival times, route-choice probabilities by aggression, and a station console simulator for noise and power drain. Every number is computed from the game's own config, and `tests/howitworks.test.js` checks the calculators against the simulation.
 
 ## The five nights
 
@@ -310,7 +310,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 
 ## Tests and balance
 
-`npm test` runs 108 tests in about 12 seconds:
+`npm test` runs 112 tests in about 12 seconds:
 
 - **Probability.** Over 100,000 trials, AI 0 succeeds exactly 0% of the time and AI 20 exactly 100%. AI 10 converges to 50%, AI 5 to 25%, and every level 0–20 to AI/20. The d20 is uniform.
 - **Pipeline.** Successful rolls and successful moves are counted separately. Blocked and invalid outcomes are distinct.
@@ -321,6 +321,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 - **Balance.** Scripted players over 40 seeds each, plus the fairness rules.
 - **Campaign.** Each night is never easier than the one before, Night 1 stays gentle, and Night 5 stays winnable. Saved progress unlocks nights in order.
 - **Practice.** A practice breach is logged and sends the creature home without ending the night. A real night never uses that reset.
+- **Failure advice.** A breach records what the station was doing, and the end screen names the cause: the auxiliary cell's bang, the field, a moving door, the fan or radio, a power failure, a forced door, or the Patient arriving while the Echo listened.
 - **Voices.** Every spoken line has a voice line id, ids are unique file names, terminal text becomes natural speech, the manifest matches recordings to lines and the recording script lists every line.
 
 Night 1 results from `npm run balance` over 200 seeds:

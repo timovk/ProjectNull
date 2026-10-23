@@ -2,26 +2,23 @@ import { el, showScreen } from './dom.js';
 import { formatDuration, formatGameClock } from '../core/GameClock.js';
 import { VICTORY_LINES } from '../content/TerminalMessages.js';
 import { NIGHT_COUNT } from '../config/GameConfig.js';
+import { failureTip } from '../content/FailureTips.js';
 
 const CAUSES = {
   SUBJECT_01: {
     WEST_DOOR: 'Subject 01 walked in through the open west door.',
-    EAST_DOOR: 'Subject 01 walked in through the open east door.',
-    tip: 'Corridor lighting turns Subject 01 back before it reaches a door. If it is already at a door, close that door until it leaves.'
+    EAST_DOOR: 'Subject 01 walked in through the open east door.'
   },
   SUBJECT_02: {
     WEST_DOOR: 'Subject 02 entered through the open west door.',
-    EAST_DOOR: 'Subject 02 entered through the open east door.',
-    tip: 'Subject 02 freezes while watched, but agitation builds the longer you stare, and neglect makes it bold. Check it briefly and often. Close the door it approaches.'
+    EAST_DOOR: 'Subject 02 entered through the open east door.'
   },
   SUBJECT_03: {
-    VENT: 'Subject 03 came down through the station duct. The station was loud enough for it to follow.',
-    tip: 'When Subject 03 is in the ventilation, keep station noise under the red line on the acoustic monitor: switch off the fan and radio, and avoid moving doors.'
+    VENT: 'Subject 03 came down through the station duct. The station was loud enough for it to follow.'
   },
   SUBJECT_04: {
     WEST_DOOR: 'Subject 04 came through the west door.',
-    EAST_DOOR: 'Subject 04 came through the east door.',
-    tip: 'A closed door only delays Subject 04: it forces the motor eventually. Hold the containment field until it withdraws, and repair forced doors in the electrical room.'
+    EAST_DOOR: 'Subject 04 came through the east door.'
   }
 };
 
@@ -64,7 +61,7 @@ export class EndScreen {
         ['Entity encounters', summary.encounters],
         ['Seed', summary.seed]
       ])),
-      el('div', { class: 'end-note', text: cause.tip ?? '' })
+      el('div', { class: 'end-note', text: failureTip(b) })
     );
     showScreen(this.node, true);
   }

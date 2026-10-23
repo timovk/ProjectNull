@@ -1,4 +1,4 @@
-import { GAME_CONFIG, AI_SCHEDULE, DEFAULT_SEED, POWER_CONFIG } from '../config/GameConfig.js';
+import { GAME_CONFIG, AI_SCHEDULE, DEFAULT_SEED, POWER_CONFIG, ENTITY_IDS } from '../config/GameConfig.js';
 import { STATION, ROOMS } from '../config/FacilityLayout.js';
 import { Random } from './Random.js';
 import { EventBus } from './EventBus.js';
@@ -249,7 +249,17 @@ export class Simulation {
       from,
       via: edge.door ?? (edge.vent ? 'VENT' : 'UNKNOWN'),
       time: this.time,
-      gameHours: this.gameHours
+      gameHours: this.gameHours,
+      // What the station looked like at that moment, for the end-screen advice.
+      context: {
+        noise: { ...this.noise.components },
+        stationNoise: this.noise.stationNoise,
+        powerFailed: this.power.failed,
+        doorDamaged: edge.door ? !!this.security.doors[edge.door]?.damaged : false,
+        barrier: this.security.barrier,
+        echoInVents: ['VENT_DUCT', 'VENT_SHAFT'].includes(this.ai.get(ENTITY_IDS.ECHO).currentRoom),
+        auxCellUsed: this.auxCellUsed
+      }
     };
     if (this.practice) return this.practiceReset(entity, breach);
     this.phase = SIM_PHASE.BREACHED;

@@ -59,6 +59,10 @@ URL parameters:
 
 ---
 
+## How It Works screen
+
+The main menu has a **How It Works** screen for anyone who wants the maths. It covers the d20 roll and what each AI level means, the night's schedule and timed gates, every subject's numbers and counters, the four traits and global rules, power and noise, a strategy guide, and the engine internals. It includes three live calculators: the roll odds and arrival times, route-choice probabilities by aggression, and a station console simulator for noise and power drain. Every number is computed from the game's own config, and `tests/howitworks.test.js` checks the calculators against the simulation.
+
 ## Practice night, radio briefing and no-startle mode
 
 **Practice night** is a guided run of the same simulation that cannot be lost.
@@ -224,7 +228,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 
 ## Tests and balance
 
-`npm test` runs 82 tests in about 8 seconds:
+`npm test` runs 87 tests in about 8 seconds:
 
 - **Probability.** Over 100,000 trials, AI 0 succeeds exactly 0% of the time and AI 20 exactly 100%. AI 10 converges to 50%, AI 5 to 25%, and every level 0–20 to AI/20. The d20 is uniform.
 - **Pipeline.** Successful rolls and successful moves are counted separately. Blocked and invalid outcomes are distinct.
@@ -277,7 +281,7 @@ src/
                           EntityModels, EntityPresenter, Environment
   render/                 Textures, Materials, PostFX, CameraFeedRenderer
   player/                 PlayerController, InteractionSystem, Interactions
-  ui/                     MainMenu, SettingsMenu, PauseMenu, HUD, SurveillanceUI, FacilityMap,
+  ui/                     MainMenu, HowItWorks, SettingsMenu, PauseMenu, HUD, SurveillanceUI, FacilityMap,
                           PracticeCoach, RadioBriefing, DocumentViewer, Subtitles, EndScreen,
                           AIDebugger, Settings
   content/                Documents, TerminalMessages, Hints, PracticeLessons, RadioBriefing

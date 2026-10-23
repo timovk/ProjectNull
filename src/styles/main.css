@@ -556,3 +556,57 @@ button {
 .splash-option input { accent-color: var(--accent); margin-top: 3px; }
 .splash-option small { display: block; color: var(--dim); font-size: 11px; }
 .menu-btn small { display: block; font-size: 11px; color: var(--dim); letter-spacing: 0.06em; margin-top: 2px; }
+
+/* ------------------------------------------------------------ how it works */
+
+.menu-card.hiw-card {
+  width: min(1020px, calc(100vw - 32px));
+  height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.hiw-card .subtitle { margin-bottom: 14px; }
+.hiw-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.hiw-tabs .ws-tab { flex: 1 1 auto; padding: 8px 10px; }
+.hiw-tabs .ws-tab:hover { color: var(--text); }
+.hiw-body { flex: 1; min-height: 0; overflow-y: auto; padding-right: 8px; user-select: text; }
+.hiw-h { color: var(--accent); font-size: 12px; letter-spacing: 0.2em; margin: 22px 0 8px; font-weight: 600; border-bottom: 1px solid var(--line); padding-bottom: 5px; }
+.hiw-h:first-child { margin-top: 4px; }
+.hiw-prose { color: var(--dim); font-size: 13px; line-height: 1.7; }
+.hiw-prose p { margin: 0 0 10px; }
+.hiw-prose b { color: var(--text); font-weight: 600; }
+.hiw-prose i { color: var(--text); }
+.hiw-prose code, .hiw-table code { color: var(--green); font-family: var(--mono); font-size: 12px; }
+.hiw-code { background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); padding: 10px 14px; color: var(--green); font-family: var(--mono); font-size: 12.5px; line-height: 1.6; margin: 0 0 12px; white-space: pre-wrap; }
+.hiw-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 12px; }
+.hiw-table th { text-align: left; color: var(--accent); font-weight: 600; font-size: 11px; letter-spacing: 0.08em; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.hiw-table td { padding: 5px 8px; border-bottom: 1px dashed rgba(160, 190, 170, 0.1); color: var(--text); vertical-align: top; }
+.hiw-table.kv thead { display: none; }
+.hiw-table.kv td:first-child { color: var(--dim); width: 46%; }
+.hiw-subject { border: 1px solid var(--line); padding: 12px 14px; margin-bottom: 14px; background: rgba(0, 0, 0, 0.18); }
+.hiw-subject h4 { margin: 0 0 6px; color: #eef2e8; letter-spacing: 0.14em; font-size: 13px; }
+.hiw-beat { font-size: 13px; line-height: 1.6; color: var(--text); border-left: 2px solid var(--green); padding: 6px 10px; background: rgba(125, 255, 168, 0.04); }
+.hiw-beat b { color: var(--green); }
+.hiw-calc { border: 1px solid rgba(255, 184, 74, 0.3); background: rgba(255, 184, 74, 0.03); padding: 12px 14px; margin-bottom: 14px; }
+.hiw-controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.hiw-controls.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 14px; }
+.hiw-control { display: grid; grid-template-columns: 130px 1fr 36px; align-items: center; gap: 10px; font-size: 12.5px; color: var(--dim); }
+.hiw-controls.grid .hiw-control { grid-template-columns: 1fr auto; }
+.hiw-control input[type='range'] { width: 100%; accent-color: var(--accent); }
+.hiw-control select { background: #0d1312; color: var(--text); border: 1px solid var(--line); font-family: var(--mono); padding: 3px; }
+.hiw-val { color: var(--accent); text-align: right; }
+.hiw-check { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--text); cursor: pointer; }
+.hiw-check input { accent-color: var(--accent); }
+.hiw-verdict { font-size: 14px; letter-spacing: 0.06em; margin-bottom: 6px; }
+.hiw-verdict.bad { color: var(--red); }
+.hiw-verdict.good { color: var(--green); }
+.hiw-meter { height: 10px; background: rgba(255, 255, 255, 0.07); position: relative; margin: 4px 0 12px; }
+.hiw-meter > i { position: absolute; left: 0; top: 0; bottom: 0; transition: width 0.2s; }
+.hiw-meter > b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--red); }
+.hiw-list { margin: 0; padding-left: 20px; }
+.hiw-list li { margin-bottom: 10px; }
+@media (max-width: 720px) {
+  .hiw-control { grid-template-columns: 1fr; }
+  .hiw-table { font-size: 11.5px; }
+}

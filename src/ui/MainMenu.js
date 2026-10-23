@@ -1,4 +1,5 @@
 import { el, showScreen } from './dom.js';
+import { HowItWorks } from './HowItWorks.js';
 
 export const CONTROLS = [
   ['Move', ['W', 'A', 'S', 'D']],
@@ -62,6 +63,7 @@ export class MainMenu {
           el('button', { class: 'menu-btn', text: 'START NIGHT 1', onclick: () => this.onStart() }),
           el('button', { class: 'menu-btn', text: 'SETTINGS', onclick: () => this.onSettings() }),
           el('button', { class: 'menu-btn', text: 'CONTROLS', onclick: () => this.show('controls') }),
+          el('button', { class: 'menu-btn', onclick: () => this.show('howItWorks') }, ['HOW IT WORKS', el('small', { text: 'The maths and behaviour behind the AI, with live calculators.' })]),
           el('button', { class: 'menu-btn', text: 'CREDITS', onclick: () => this.show('credits') })
         ]),
         el('div', { class: 'menu-footer', text: 'v0.1.0  /  HELIX RESEARCH DIRECTORATE  /  CONTRACT 4471' })
@@ -87,14 +89,17 @@ export class MainMenu {
     ]);
 
     for (const n of [this.splash, this.main, this.controls, this.credits]) root.append(n);
+    this.howItWorks = new HowItWorks(root, { onBack: () => this.back() });
     this.backTarget = 'main';
+  }
+
+  get screens() {
+    return { splash: this.splash, main: this.main, controls: this.controls, credits: this.credits, howItWorks: this.howItWorks.node };
   }
 
   show(which, backTarget = 'main') {
     this.backTarget = backTarget;
-    for (const [k, n] of Object.entries({ splash: this.splash, main: this.main, controls: this.controls, credits: this.credits })) {
-      showScreen(n, k === which);
-    }
+    for (const [k, n] of Object.entries(this.screens)) showScreen(n, k === which);
   }
 
   back() {
@@ -105,7 +110,7 @@ export class MainMenu {
   }
 
   hideAll() {
-    for (const n of [this.splash, this.main, this.controls, this.credits]) showScreen(n, false);
+    for (const n of Object.values(this.screens)) showScreen(n, false);
   }
 }
 

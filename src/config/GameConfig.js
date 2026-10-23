@@ -92,11 +92,11 @@ export const NIGHT_SCHEDULES = {
 
 /** Survival of the scripted expert / distracted players, 200 simulated nights each. */
 export const NIGHT_MEASURED_SURVIVAL = {
-  1: { expert: 98, distracted: 97 },
-  2: { expert: 87, distracted: 91 },
-  3: { expert: 73, distracted: 75 },
-  4: { expert: 59, distracted: 63 },
-  5: { expert: 42, distracted: 54 }
+  1: { expert: 99, distracted: 100 },
+  2: { expert: 90, distracted: 93 },
+  3: { expert: 73, distracted: 78 },
+  4: { expert: 57, distracted: 71 },
+  5: { expert: 35, distracted: 51 }
 };
 
 /**
@@ -161,7 +161,8 @@ export const ENTITY_DEFS = {
       falloffBase: 0.30, // per-hop noise retention = base + span * perception
       falloffSpan: 0.35,
       listenThresholdBase: 0.50, // station noise needed to enter = base - span * perception
-      listenThresholdSpan: 0.30
+      listenThresholdSpan: 0.30,
+      giveUpIntervals: 6 // after settling, this many intervals of silence and it leaves (31.5 s in total)
     }
   },
   [ENTITY_IDS.PATIENT]: {

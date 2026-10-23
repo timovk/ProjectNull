@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rollStats, consoleModel, echoThreshold, routeTimes } from '../src/ui/HowItWorks.js';
+import { rollStats, consoleModel, echoThreshold, echoGiveUpSeconds, routeTimes } from '../src/ui/HowItWorks.js';
 import { Simulation } from '../src/core/Simulation.js';
 import { ENTITY_IDS } from '../src/config/GameConfig.js';
 
@@ -49,7 +49,8 @@ test('console model equals the simulation for a quiet, defended station', () => 
   assert.ok(close(m.drain, sim.power.drainPerSecond));
 });
 
-test('the Echo threshold shown equals the one the Echo uses', () => {
+test('the Echo threshold and give-up time shown equal the ones the Echo uses', () => {
   const sim = new Simulation({ seed: 'hiw3' });
   assert.equal(echoThreshold(), sim.ai.get(ENTITY_IDS.ECHO).listenThreshold());
+  assert.equal(echoGiveUpSeconds(), sim.ai.get(ENTITY_IDS.ECHO).giveUpSeconds());
 });

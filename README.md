@@ -74,11 +74,11 @@ Night progress is saved in the browser. Each night raises every subject's level 
 
 | Night | 12 AM levels (W/O/E/P) | 5 AM levels | Expert survives | Distracted survives |
 | --- | --- | --- | --- | --- |
-| 1 | 3/2/1/0 | 7/6/5/3 | 98% | 97% |
-| 2 | 5/4/3/1 | 11/10/9/7 | 87% | 91% |
-| 3 | 7/6/5/3 | 13/12/11/9 | 73% | 75% |
-| 4 | 8/7/6/4 | 15/14/13/11 | 59% | 63% |
-| 5 | 9/8/7/5 | 17/16/15/13 | 42% | 54% |
+| 1 | 3/2/1/0 | 7/6/5/3 | 99% | 100% |
+| 2 | 5/4/3/1 | 11/10/9/7 | 90% | 93% |
+| 3 | 7/6/5/3 | 13/12/11/9 | 73% | 78% |
+| 4 | 8/7/6/4 | 15/14/13/11 | 57% | 71% |
+| 5 | 9/8/7/5 | 17/16/15/13 | 35% | 51% |
 
 The survival figures are for scripted players over 200 simulated nights each. "Expert" reacts in 1.5 s, and "distracted" reacts in 5 s and checks the Observer once a minute. Both see every subject at once, so humans should expect lower numbers. The full hourly schedules are in `NIGHT_SCHEDULES` in `src/config/GameConfig.js`, and on the How It Works screen.
 
@@ -94,6 +94,8 @@ With the original economy these limits made a cliff around AI 8: all-8s survived
 - The containment field costs half as much, 0.15%/s instead of 0.30%/s.
 - The facility base load is lower, 0.018%/s instead of 0.026%/s.
 - Moving doors are quieter: +12 dBn instead of +35, so in a fully silent station a door alone no longer lets the Echo in.
+
+Later, the Echo got a give-up rule: half a minute of unbroken silence in the duct sends it away, whatever its rolls. Before that, a low-level Echo needed minutes of lucky rolls to leave, so on Night 1 it stayed a median of 88 s (up to 4½ minutes) while the fan was off and the cameras overheated. Now the median is 38 s on every night. The rule hardly changes survival: over 600 fresh nights each, Night 4 and Night 5 moved by less than one point.
 
 Then one difficulty knob, which scales every subject's opening and 5 AM levels, was swept and each night was placed on the resulting curve.
 
@@ -249,7 +251,7 @@ The AI level is the only input to the roll. Each attribute modifies exactly one 
 | --- | --- | --- | --- |
 | Wanderer | Light deterrence = 0.40 + 0.60 × awareness/20. A lit corridor blocks entry with that chance. It flees a corridor whose light comes on. | Retreats two rooms. | Corridor lighting, then doors. |
 | Observer | Detection takes 2.5 − 2.0p seconds of continuous watching. Agitation gains 0.45 × (0.25 + 0.75p) per second, capped at 10. | Retreats two rooms. | Brief, regular checks. Watching freezes it, but each 2.5 agitation adds +1 AI, up to +4. At 8 agitation it stops freezing. After 60 s unwatched, its aggression rises by up to +8. |
-| Echo | Hearing: each room hop keeps 0.30 + 0.35p of the noise, out to 2 + floor(awareness/5) hops. It enters only while station noise ≥ 0.50 − 0.30p. | Retreats two rooms. | Silence: fan, radio, moving doors and the field are all loud. Diagnostic pings act as lures. Informed decisions discount pings to 35%. |
+| Echo | Hearing: each room hop keeps 0.30 + 0.35p of the noise, out to 2 + floor(awareness/5) hops. It enters only while station noise ≥ 0.50 − 0.30p. | Retreats two rooms after 3 silent attempts, or after 7.5 intervals (31.5 s) of unbroken silence in the duct, whichever comes first. Any noise above the line restarts that wait. | Silence: fan, radio, moving doors and the field are all loud. Diagnostic pings act as lures. Informed decisions discount pings to 35%. |
 | Patient | Hears its door open and takes a reactive opportunity after 1 + 5(1 − p) seconds. | Forces a closed door after 5 blocked attempts. Withdraws home after 10 + 0.75 × patience seconds of field exposure. | Containment field, plus repairing forced doors. Resolve adds +1 AI per 20 s waiting, up to +5. |
 
 Here p = awareness / 20.
@@ -308,13 +310,13 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 
 ## Tests and balance
 
-`npm test` runs 106 tests in about 9 seconds:
+`npm test` runs 108 tests in about 12 seconds:
 
 - **Probability.** Over 100,000 trials, AI 0 succeeds exactly 0% of the time and AI 20 exactly 100%. AI 10 converges to 50%, AI 5 to 25%, and every level 0–20 to AI/20. The d20 is uniform.
 - **Pipeline.** Successful rolls and successful moves are counted separately. Blocked and invalid outcomes are distinct.
 - **Clock.** Fixed steps and catch-up. Identical AI outcomes at 30 fps, 144 fps and with random frame jitter. Hitches skip no opportunities. The night length is configurable.
 - **Graph.** Validation, one-way edges, restricted edges, doors, gates and live distances. Across full simulated nights, every move follows a valid, allowed edge.
-- **AI.** Independent timers, the schedule, AI caps, deterministic simultaneous ordering, seed determinism and exact replay. Every attribute formula and every entity countermeasure is checked.
+- **AI.** Independent timers, the schedule, AI caps, deterministic simultaneous ordering, seed determinism and exact replay. Every attribute formula and every entity countermeasure is checked, including the Echo giving up after half a minute of silence.
 - **Power.** Each drain, failure without automatic death, the manual brace, the auxiliary cell and thermal shutdown.
 - **Balance.** Scripted players over 40 seeds each, plus the fairness rules.
 - **Campaign.** Each night is never easier than the one before, Night 1 stays gentle, and Night 5 stays winnable. Saved progress unlocks nights in order.
@@ -327,9 +329,9 @@ Night 1 results from `npm run balance` over 200 seeds:
 | --- | --- |
 | Does nothing | 0% |
 | Only closes doors | 7% |
-| Uses every countermeasure, 1.5 s reactions | 98% |
-| Slow (3.5 s reactions, checks the Observer every 40 s) | 98% |
-| Distracted (5 s reactions, notices the Echo only when it is directly overhead) | 97% |
+| Uses every countermeasure, 1.5 s reactions | 100% |
+| Slow (3.5 s reactions, checks the Observer every 40 s) | 99% |
+| Distracted (5 s reactions, notices the Echo only when it is directly overhead) | 100% |
 
 The scripted players see every entity at once, which no human can. Expect real first attempts to go worse.
 

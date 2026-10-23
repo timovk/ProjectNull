@@ -1,4 +1,4 @@
-import { Entity, ENTITY_STATES } from '../Entity.js';
+import { Entity, ENTITY_STATES, THRESHOLD_SETTLE_INTERVALS } from '../Entity.js';
 import * as BM from '../BehaviorModifiers.js';
 
 /**
@@ -17,6 +17,10 @@ import * as BM from '../BehaviorModifiers.js';
  *                 blocked with reason SILENCE.
  *  Aggression   standard approach bias.
  *  Patience     silent (blocked) attempts before it retreats two rooms.
+ *  Give-up      it also retreats after listening to a silent station for
+ *               (1.5 + 6) intervals (31.5 s), whatever its rolls do. Any
+ *               moment above the threshold restarts that wait. Without this,
+ *               a low-AI Echo needed minutes of lucky rolls to leave.
  *  Intelligence informed decisions discount decoy noise (diagnostic pings)
  *               to 35 % and use the live distance map.
  */
@@ -24,6 +28,25 @@ export class Echo extends Entity {
   reset() {
     super.reset();
     this.lastPerceived = 0;
+    this.silentFor = 0;
+  }
+
+  /** Seconds of continuous silence in the duct after which it gives up. */
+  giveUpSeconds() {
+    return this.movementInterval * (THRESHOLD_SETTLE_INTERVALS + this.tuning.giveUpIntervals);
+  }
+
+  update(dt, sim) {
+    const listening = this.isAtThreshold(sim) && this.state !== ENTITY_STATES.RETREATING && this.aiLevel > 0;
+    if (!listening || sim.noise.stationNoise >= this.listenThreshold()) {
+      this.silentFor = 0;
+      return;
+    }
+    this.silentFor += dt;
+    if (this.silentFor >= this.giveUpSeconds()) {
+      this.silentFor = 0;
+      this.beginRetreat(sim, 'SILENCE_GAVE_UP');
+    }
   }
 
   perceptionStrength() {
@@ -81,6 +104,7 @@ export class Echo extends Entity {
       hearing: `${this.perceivedNoise(this.currentRoom, sim).toFixed(3)} here`,
       stationNoise: sim.noise.stationNoise.toFixed(3),
       threshold: this.listenThreshold().toFixed(3),
+      silence: `${this.silentFor.toFixed(1)}/${this.giveUpSeconds().toFixed(1)}s`,
       range: `${BM.hearingRange(this.attributes.awareness)} hops`
     };
   }

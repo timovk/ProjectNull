@@ -8,7 +8,7 @@ The night lasts **11 real minutes**. Each in-game hour takes about 1 minute 50 s
 
 If you remember nothing else, remember these five rules:
 
-1. **Scraping in the vents? Fan off, radio off, hands off the doors.** The Echo is the creature that ends most first nights. It can only drop in while the station is loud.
+1. **Scraping in the vents? Fan off, radio off, hands off the doors.** The Echo is the creature that ends most first nights. It can only drop in while the station is loud, and after about half a minute of silence it gives up.
 2. **Something at a door? Shut that door.** Open it again when the doorway camera is empty.
 3. **The tall one in a corridor? Light that corridor.** Light keeps the Wanderer away.
 4. **Glance at the pale one every 20 seconds or so. Never stare.** A two-second look is enough.
@@ -90,13 +90,14 @@ This is the important one. **On Night 1, almost every loss is the Echo.** A play
 1. Listen for **metal scraping in the ventilation**. A subtitle shows it too. You can also see it on CAM 12 (Ventilation Shaft).
 2. **As soon as you hear it, switch the fan off and the radio off.** The yellow line on the acoustic monitor drops well below the red line.
 3. When it reaches the duct right above you, you hear scraping overhead and **the vent grille trembles and sheds dust** (the "snow"). Keep everything off. You have several seconds after it arrives, and it cannot come down while the station is quiet.
-4. While it is overhead, **avoid moving a door, repairing or resetting anything.** A moving door makes a short burst of noise that can push you over the line for a moment even when everything else is off. A door that is already shut is quiet enough.
-5. **Never pull the field lever while the Echo is overhead.** The field is the loudest thing in the station.
-6. When the scraping moves away and the grille is still, switch the fan back on.
+4. **Wait it out: about 30 seconds of unbroken silence and it gives up.** The acoustic monitor's yellow line has to stay under the red line the whole time. Any moment above the line, even a brief one, restarts that half minute. It often leaves sooner. When the dust stops falling, it has backed off.
+5. While it is overhead, **avoid moving a door, repairing or resetting anything.** A moving door makes a short burst of noise that can push you over the line for a moment even when everything else is off. A door that is already shut is quiet enough.
+6. **Never pull the field lever while the Echo is overhead.** The field is the loudest thing in the station.
+7. When the scraping moves away and the grille is still, switch the fan back on.
 
-The fan keeps the camera rack cool. With the fan off and the cameras in use, the rack overheats after about 80 seconds and the cameras shut down for a while. An Echo visit is usually much shorter than that, but turn the fan back on as soon as the Echo leaves.
+The fan keeps the camera rack cool. With the fan off and the cameras in use, the rack overheats after about 80 seconds and the cameras shut down for a while. An Echo visit lasts about 40 seconds and almost never more than a minute, so a silent player keeps the cameras. Turn the fan back on as soon as the Echo leaves.
 
-The Echo first reaches the duct around **2:30** on a typical night, sometimes as early as 1:30, and comes back two or three times.
+The Echo first reaches the duct around **2:30** on a typical night, sometimes as early as 1:30, and comes back two or three times. It may also return soon after giving up: it only backs off two rooms.
 
 Seeing the Echo on a door camera is not a threat. It wanders the corridors sometimes, but the doors do not let it through. Only the duct does.
 
@@ -131,7 +132,7 @@ It reaches the West door in about 3 of 4 nights, typically around 4:45 and rarel
 **The one tricky moment: the Patient at the door and the Echo in the duct at the same time.** The field is too loud while the Echo listens. Do this instead:
 
 1. If the West door is open, shut it now, before the Echo gets settled overhead. A shut door holds the Patient for a while; on Night 1 that is usually more than a minute.
-2. Keep the fan and radio off and wait for the Echo to leave.
+2. Keep the fan and radio off and wait for the Echo to leave. That takes at most about half a minute of silence.
 3. Then pull the field lever.
 
 ### 5:00 to 6:00: hold on
@@ -181,7 +182,7 @@ From 300 simulated nights:
 | Play style | Survival |
 | --- | --- |
 | Follows this guide | 99% |
-| Follows this guide but never checks the Observer | 97% |
+| Follows this guide but never checks the Observer | 99% |
 | Uses doors, lights and the field but never silences the station for the Echo | 12% |
 | Only uses doors | 8% |
 | Does nothing | 0% (usually caught around 2:00 to 2:30) |

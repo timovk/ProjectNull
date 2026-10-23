@@ -85,6 +85,11 @@ export function consoleModel(c) {
   return { noise, total, drain };
 }
 
+export function echoGiveUpSeconds() {
+  const e = ENTITY_DEFS[ECHO];
+  return e.movementInterval * (THRESHOLD_SETTLE_INTERVALS + e.tuning.giveUpIntervals);
+}
+
 export function echoThreshold() {
   const t = ENTITY_DEFS[ECHO].tuning;
   return t.listenThresholdBase - t.listenThresholdSpan * BM.perception(ENTITY_DEFS[ECHO].attributes.awareness);
@@ -311,11 +316,13 @@ function sectionSubjects() {
       ['Sound kept per room it travels', pct(falloff)],
       ['Enters only if station noise is at least', `${(echoThreshold() * 100).toFixed(0)} dBn`],
       ['Decoy pings, when it sees through them', `count for ${pct(et.decoyDiscountWhenInformed)}`],
-      ['Blocked attempts before it gives up', `${BM.obstacleTolerance(e.attributes.patience)}, then retreats ${e.retreatSteps} rooms`]
+      ['Blocked attempts before it gives up', `${BM.obstacleTolerance(e.attributes.patience)}, then retreats ${e.retreatSteps} rooms`],
+      ['Or: unbroken silence before it gives up', `${sec(echoGiveUpSeconds())}, then retreats ${e.retreatSteps} rooms`]
     ], `
       <p>Follows sound. When choosing a room, each candidate is weighted by how loud it seems from there: every noise source counts for <code>level x ${n2(falloff)}^rooms</code>, out to ${BM.hearingRange(e.attributes.awareness)} rooms away, and the weight is <code>${et.noiseWeightFloor} + ${et.noiseWeightScale} x heard noise</code>. Noise sources are your station, any lit corridor, a diagnostic ping and the decontamination cycle.</p>
       <p>It travels the ventilation, which nothing else can use, and enters through the ceiling duct. Doors do not matter to it. From the duct it can only drop in if the station is at least ${(echoThreshold() * 100).toFixed(0)} dBn loud. If it is quieter, the attempt fails with reason <code>SILENCE</code>.</p>
-    `, `When CAM 12 shows it in the shaft, or you hear scraping above, go quiet: fan off, radio off, and do not open or close doors (a moving door is +${(N.doorPulse * 100).toFixed(0)} dBn). Use the noise calculator under POWER &amp; NOISE to see what is safe. A diagnostic ping in a distant room can lure it away.`),
+      <p>It leaves the duct after ${BM.obstacleTolerance(e.attributes.patience)} silent attempts, or after ${sec(echoGiveUpSeconds())} of unbroken silence, whichever comes first. The second rule does not depend on its rolls. Without it, a low-level Echo would need minutes of lucky rolls before it could give up. Any moment above the line restarts the wait.</p>
+    `, `When CAM 12 shows it in the shaft, or you hear scraping above, go quiet: fan off, radio off, and do not open or close doors (a moving door is +${(N.doorPulse * 100).toFixed(0)} dBn). Use the noise calculator under POWER &amp; NOISE to see what is safe. Stay quiet for ${sec(echoGiveUpSeconds())} and it leaves. A diagnostic ping in a distant room can lure it away.`),
     card(PATIENT, [
       ...basics(PATIENT),
       ['Extra weight on routes away from you', `x${pt.awayPreference}`],
@@ -470,7 +477,7 @@ function sectionStrategy() {
       <li><b>Light first, door second.</b> A lit corridor turns the Wanderer back ${pct(BM.lightDeterrence(ENTITY_DEFS[WANDERER].attributes.awareness))} of the time for ${(D.corridorLight * 60).toFixed(1)}%/min. A door is certain but costs ${(D.doorClosed * 60).toFixed(1)}%/min, twice as much.</li>
       <li><b>Open doors again.</b> A door left shut for the whole night would cost ${(D.doorClosed * GAME_CONFIG.nightDurationSeconds).toFixed(0)}%. Once the window or CAM 10/11 shows the approach empty, open it.</li>
       <li><b>Observer: a two-second look every half minute.</b> That keeps neglect at zero and agitation near zero. Never stare for ${(ENTITY_DEFS[OBSERVER].tuning.freezeAgitationLimit / (ENTITY_DEFS[OBSERVER].tuning.agitationGainPerSecond * (0.25 + 0.75 * BM.perception(ENTITY_DEFS[OBSERVER].attributes.awareness)))).toFixed(0)} seconds or more.</li>
-      <li><b>Echo: silence beats everything.</b> Fan off and radio off while you keep watching the cameras is ${(quiet.total * 100).toFixed(0)} dBn, safely under ${(echoThreshold() * 100).toFixed(0)}. Then do not move doors. Turn the fan back on once it leaves, or the rack overheats (about ${(1 / SURVEILLANCE_CONFIG.thermalRiseViewing).toFixed(0)} s of watching with the fan off).</li>
+      <li><b>Echo: silence beats everything.</b> Fan off and radio off while you keep watching the cameras is ${(quiet.total * 100).toFixed(0)} dBn, safely under ${(echoThreshold() * 100).toFixed(0)}. Then do not move doors. After ${sec(echoGiveUpSeconds())} of unbroken silence it gives up and backs off. Turn the fan back on once it leaves, or the rack overheats (about ${(1 / SURVEILLANCE_CONFIG.thermalRiseViewing).toFixed(0)} s of watching with the fan off).</li>
       <li><b>Patient: commit to the field.</b> About ${Math.ceil(barrierSecs)} uninterrupted seconds sends it all the way home, for roughly ${(D.barrier * barrierSecs).toFixed(0)}% power. Toggling wastes power, because progress drains while the field is off.</li>
       <li><b>The nasty combo: Patient at a door while the Echo is in the duct.</b> The field adds ${(N.barrier * 100).toFixed(0)} dBn, which lets the Echo in. Shut the Patient's door instead: it needs ${BM.obstacleTolerance(p.attributes.patience)} successful attempts to force it. Once the Echo leaves, switch to the field.</li>
       <li><b>Lure with pings.</b> A ping in a far room (the Research Hall, say) costs ${POWER_CONFIG.pingCost}% and pulls the Echo toward it. Informed decisions (${pct(BM.informedChance(ENTITY_DEFS[ECHO].attributes.intelligence))} of them) see through it.</li>

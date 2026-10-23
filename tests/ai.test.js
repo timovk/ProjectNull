@@ -5,6 +5,7 @@ import { runMovementOpportunity, OUTCOMES } from '../src/ai/MovementOpportunity.
 import * as BM from '../src/ai/BehaviorModifiers.js';
 import { ENTITY_IDS, ENTITY_ORDER, AI_SCHEDULE, ENTITY_DEFS } from '../src/config/GameConfig.js';
 import { STATION } from '../src/config/FacilityLayout.js';
+import { competentPolicy } from '../src/ai/ScriptedPlayers.js';
 
 const { WANDERER, OBSERVER, ECHO, PATIENT } = ENTITY_IDS;
 const ZERO = { SUBJECT_01: [0], SUBJECT_02: [0], SUBJECT_03: [0], SUBJECT_04: [0] };
@@ -420,6 +421,52 @@ test('Echo: can only drop into a noisy station', () => {
   const entered = runMovementOpportunity(e, sim);
   assert.equal(entered.outcome, OUTCOMES.ATTACK_SUCCESS);
   assert.equal(sim.breach.via, 'VENT');
+});
+
+test('Echo: gives up after 31.5 s of silence in the duct, whatever its rolls do', () => {
+  const sim = new Simulation({ seed: 'echo-giveup' });
+  const e = sim.ai.get(ECHO);
+  e.setAILevel(1);
+  assert.equal(e.giveUpSeconds(), 4.2 * 7.5);
+  quietStation(sim, { keepRack: true });
+  place(e, 'VENT_DUCT', 'LISTENING');
+  e.update(20, sim);
+  assert.equal(e.state, 'LISTENING');
+  // Any noise above the line restarts the wait...
+  sim.command({ type: 'FAN', on: true });
+  sim.noise.update(0);
+  e.update(0.1, sim);
+  assert.equal(e.silentFor, 0);
+  // ...and the full silence is needed again before it leaves.
+  quietStation(sim, { keepRack: true });
+  e.update(31, sim);
+  assert.equal(e.state, 'LISTENING');
+  e.update(0.6, sim);
+  assert.equal(e.state, 'RETREATING');
+  assert.equal(e.retreatPath.length, ENTITY_DEFS[ECHO].retreatSteps);
+});
+
+test('Echo: a silent player is not kept waiting for minutes at low AI levels', () => {
+  const stays = [];
+  for (let i = 0; i < 40; i++) {
+    const sim = new Simulation({ seed: `echo-stay-${i}` });
+    const policy = competentPolicy();
+    let since = null;
+    while (sim.phase === 'RUNNING') {
+      policy(sim);
+      sim.step();
+      const inDuct = sim.ai.get(ECHO).currentRoom === 'VENT_DUCT';
+      if (inDuct && since === null) since = sim.time;
+      if (!inDuct && since !== null) {
+        stays.push(sim.time - since);
+        since = null;
+      }
+    }
+  }
+  stays.sort((a, b) => a - b);
+  assert.ok(stays.length > 20, `${stays.length} visits`);
+  const median = stays[Math.floor(stays.length / 2)];
+  assert.ok(median < 45, `median stay ${median.toFixed(1)} s`);
 });
 
 test('Echo: security doors do not stop it, it never uses them', () => {

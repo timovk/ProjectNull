@@ -85,7 +85,7 @@ export function formatHour12(hour) {
 
 /** "12:43 AM" style for wall clocks. */
 export function formatGameClock(gameHours) {
-  const totalMinutes = Math.floor(gameHours * 60 + 1e-6);
+  const totalMinutes = Math.floor(gameHours * 60 + 1e-3);
   const h = Math.floor(totalMinutes / 60) % 24;
   const m = totalMinutes % 60;
   const display = h % 12 === 0 ? 12 : h % 12;

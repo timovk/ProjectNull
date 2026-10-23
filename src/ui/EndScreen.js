@@ -1,0 +1,95 @@
+import { el, showScreen } from './dom.js';
+import { formatDuration, formatGameClock } from '../core/GameClock.js';
+import { VICTORY_LINES } from '../content/TerminalMessages.js';
+
+const CAUSES = {
+  SUBJECT_01: {
+    WEST_DOOR: 'Subject 01 walked in through the open west door.',
+    EAST_DOOR: 'Subject 01 walked in through the open east door.',
+    tip: 'Corridor lighting turns Subject 01 back before it reaches a door. If it is already at a door, close that door until it leaves.'
+  },
+  SUBJECT_02: {
+    WEST_DOOR: 'Subject 02 entered through the open west door.',
+    EAST_DOOR: 'Subject 02 entered through the open east door.',
+    tip: 'Subject 02 freezes while watched, but agitation builds the longer you stare, and neglect makes it bold. Check it briefly and often. Close the door it approaches.'
+  },
+  SUBJECT_03: {
+    VENT: 'Subject 03 came down through the station duct. The station was loud enough for it to follow.',
+    tip: 'When Subject 03 is in the ventilation, keep station noise under the red line on the acoustic monitor: switch off the fan and radio, and avoid moving doors.'
+  },
+  SUBJECT_04: {
+    WEST_DOOR: 'Subject 04 came through the west door.',
+    EAST_DOOR: 'Subject 04 came through the east door.',
+    tip: 'A closed door only delays Subject 04: it forces the motor eventually. Hold the containment field until it withdraws, and repair forced doors in the electrical room.'
+  }
+};
+
+export class EndScreen {
+  constructor(root, { onRetry, onMenu }) {
+    this.body = el('div');
+    this.node = el('div', { class: 'screen opaque interactive hidden' }, [
+      el('div', { class: 'menu-card' }, [
+        this.body,
+        el('div', { class: 'row-buttons' }, [
+          (this.retryBtn = el('button', { class: 'small-btn', text: 'RETRY NIGHT 1', onclick: onRetry })),
+          el('button', { class: 'small-btn', text: 'RETURN TO MENU', onclick: onMenu })
+        ])
+      ])
+    ]);
+    root.append(this.node);
+  }
+
+  showFailure(summary) {
+    const b = summary.breach;
+    const cause = CAUSES[b.entityId] ?? {};
+    this.retryBtn.textContent = 'RETRY NIGHT 1';
+    this.body.replaceChildren(
+      el('h1', { class: 'end-title lost', text: 'CONNECTION LOST' }),
+      el('div', { class: 'end-sub', text: `OPERATOR SIGNAL TERMINATED AT ${formatGameClock(b.gameHours)}` }),
+      el('div', { class: 'stats' }, statRows([
+        ['Time survived', `${formatDuration(summary.timeSurvived)} (${formatGameClock(b.gameHours)})`],
+        ['Entity responsible', `${b.designation} / ${b.name}`],
+        ['Cause of failure', cause[b.via] ?? `${b.designation} entered the station.`],
+        ['Power remaining', `${summary.powerRemaining.toFixed(1)}%${summary.powerFailed ? ' (main cell depleted)' : ''}`],
+        ['Entity encounters', summary.encounters],
+        ['Seed', summary.seed]
+      ])),
+      el('div', { class: 'end-note', text: cause.tip ?? '' })
+    );
+    showScreen(this.node, true);
+  }
+
+  showVictory(summary) {
+    this.retryBtn.textContent = 'PLAY NIGHT 1 AGAIN';
+    const lines = el('div', { class: 'terminal-lines' }, VICTORY_LINES.map((t, i) => el('div', { text: `> ${t}`, style: { animationDelay: `${0.6 + i * 1.1}s` } })));
+    this.body.replaceChildren(
+      el('h1', { class: 'end-title won', text: 'SHIFT COMPLETE' }),
+      el('div', { class: 'end-sub', text: 'NIGHT 1 / 6:00 AM' }),
+      lines,
+      el('div', { class: 'stats' }, statRows([
+        ['Night completed', 'Night 1'],
+        ['Survival time', formatDuration(summary.timeSurvived)],
+        ['Power remaining', `${summary.powerRemaining.toFixed(1)}%`],
+        ['Entity encounters', summary.encounters],
+        ['Entries blocked', summary.blockedEntries],
+        ['Door closures', `${summary.doorCloses} (${summary.doorSeconds.toFixed(0)} s shut)`],
+        ['Corridor lighting', `${summary.lightSeconds.toFixed(0)} s`],
+        ['Containment field', `${summary.barrierSeconds.toFixed(0)} s, ${summary.barrierRepels} repelled`],
+        ['Camera time', `${summary.cameraSeconds.toFixed(0)} s, ${summary.cameraSwitches} switches`],
+        ['Ventilation off', `${summary.fanOffSeconds.toFixed(0)} s`],
+        ['Repairs / relay resets', `${summary.repairs} / ${summary.relayResets}`],
+        ['Movement opportunities simulated', summary.opportunities],
+        ['Seed', summary.seed]
+      ]))
+    );
+    showScreen(this.node, true);
+  }
+
+  hide() {
+    showScreen(this.node, false);
+  }
+}
+
+function statRows(rows) {
+  return rows.flatMap(([k, v]) => [el('span', { text: k }), el('span', { text: String(v) })]);
+}

@@ -387,6 +387,6 @@ docs/VOICE_LINES.md       recording script (generated)
 ## Known limitations
 
 - Nights 2 to 5 differ from Night 1 in AI levels and story text only. They add no new mechanics yet.
-- Art and audio are fully procedural. Entity models are stylized primitives. Voices use the browser's built-in speech until recordings are added, and browser voices vary in quality between systems.
+- Art and audio are fully procedural. Entity models are sculpted from lathe profiles and noise, with generated skin, cloth and bandage textures (`src/world/EntityModels.js`); they are not rigged, so movement between rooms is staged rather than animated. Voices use the browser's built-in speech until recordings are added, and browser voices vary in quality between systems.
 - The game targets desktop browsers with a mouse and keyboard. There is no touch or gamepad input.
 - Balance was tuned against scripted players and a short browser pass, not human playtests.

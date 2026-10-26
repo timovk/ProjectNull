@@ -1,6 +1,6 @@
 # PROJECT NULL
 
-**Version 0.4.0 — Two Endings**
+**Version 0.5.0 — Content Complete**
 
 A first-person psychological horror game set in Research Facility N-17, built with HTML, CSS, JavaScript and Three.js. You are a contract technician in a security station from 12 AM to 6 AM, for five nights. Four subjects move through the facility. Their behaviour is driven by a transparent, testable **movement-opportunity simulation**, not by scripts.
 

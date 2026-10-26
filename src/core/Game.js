@@ -38,12 +38,16 @@ import { HINTS } from '../content/Hints.js';
 import { GATE_MESSAGES, victoryLines } from '../content/TerminalMessages.js';
 import { Progress } from './Progress.js';
 import { TAPES } from '../content/Documents.js';
+import { subjectsActive } from '../content/SubjectFiles.js';
 import { ROOMS } from '../config/FacilityLayout.js';
 import { ENTITY_IDS, PRACTICE_SCHEDULE, NIGHT_SCHEDULES, NIGHT_COUNT } from '../config/GameConfig.js';
 
 const FAILURE_SECONDS = 10;
 const VICTORY_SECONDS = 9;
 const DEVIATION_VICTORY_SECONDS = 12;
+// The contained ending holds on CAM 13 (the station, as WARDEN now files it) before the fade.
+const CONTAINED_VICTORY_SECONDS = 17;
+const CELL05_CROSSFADE = 2.5;
 const SEAT_POS = new THREE.Vector3(0, 1.3, -2.2);
 const SEAT_TARGET = new THREE.Vector3(0, 1.27, -3.1);
 
@@ -87,6 +91,7 @@ export class Game {
     this.lighting = new LightingController(this.facility, this.settings);
     this.station = new StationPresenter(this.facility, this.feeds, this.settings);
     this.stationCam = makeFeedCamera([3.9, 2.75, 3.1], [-1.2, 0.9, -2.2], 80);
+    this.cell05Cam = makeFeedCamera([2.4, 2.7, 0.9], [0.1, 0.7, -2.1], 62);
     this.audio = new AudioSystem(this.settings);
     this.cameraSpeaker = new CameraSpeaker(this);
     this.voice = new VoiceSystem(this.settings, this.audio);
@@ -156,6 +161,13 @@ export class Game {
       },
       onClose: () => this.closeWorkstation()
     });
+    // Label for the contained ending's last feed. CAM 13 is not on the workstation's list.
+    this.cell05Time = el('div', { class: 'timestamp' });
+    this.cell05Label = el('div', { id: 'cell05-feed' }, [
+      el('div', { class: 'feed-label' }, [el('div', { class: 'cam', text: 'CAM 13' }), el('div', { class: 'room', text: 'CELL 05' }), el('div', { class: 'rec', html: '<i></i>REC' })]),
+      this.cell05Time
+    ]);
+    ui.append(this.cell05Label);
     this.menu = new MainMenu(ui, {
       onBegin: () => this.begin(),
       onStart: (night) => {
@@ -348,6 +360,8 @@ export class Game {
     this.hud.clearWarnings();
     this.hud.setPracticeMap(practice);
     this.workstation.setPracticeMap(practice);
+    this.workstation.setFiles(this.progress.files);
+    this.cell05Label.classList.remove('visible');
     if (practice) this.coach.start();
     else this.coach.stop();
     this.radio.start(!practice && !custom && this.night === 1 && this.settings.get('radioBriefing'));
@@ -608,7 +622,6 @@ export class Game {
     const b = this.sim.breach;
     this.fsm.set(STATES.FAILING);
     this.failure = { t: 0, entityId: b.entityId, via: b.via };
-    this.stationFeedAlpha = 0;
     this.interaction.enabled = false;
     this.interaction.cancelHold();
     if (this.docs.open) this.docs.hide();
@@ -671,7 +684,15 @@ export class Game {
     // The deviation ending: WARDEN reports the deviation instead of "contained", then R. speaks.
     const deviation = this.mode === 'NIGHT' && !!this.sim.deviation;
     const lines = deviation ? DEVIATION_LINES : victoryLines(this.mode === 'NIGHT' ? this.night : 1);
-    const duration = deviation ? DEVIATION_VICTORY_SECONDS : VICTORY_SECONDS;
+    // The contained ending: after the report, the screen crossfades to CAM 13, the station filed as CELL 05.
+    const contained = this.mode === 'NIGHT' && this.night >= NIGHT_COUNT && !deviation;
+    const duration = deviation ? DEVIATION_VICTORY_SECONDS : contained ? CONTAINED_VICTORY_SECONDS : VICTORY_SECONDS;
+    if (contained && v.cell05At === undefined && v.t > 0.8 + lines.length * 1.2 + 1.2) {
+      v.cell05At = v.t;
+      this.hud.setVisible(false);
+      this.cell05Time.textContent = `N-17 ${formatGameClock(this.sim.gameHours)}  1998-10-23`;
+      this.cell05Label.classList.add('visible');
+    }
     while (v.lines < lines.length && v.t > 0.8 + v.lines * 1.2) {
       this.pushMessage(lines[v.lines], 'facility', v.lines === 0);
       this.voice.say(deviation ? deviationLineId(v.lines) : morningLineId(this.mode === 'NIGHT' ? this.night : 1, v.lines));
@@ -688,6 +709,7 @@ export class Game {
       v.fading = true;
       this.setFade(1);
       this.audio.setFade(0.3, 2.4);
+      this.cell05Label.classList.remove('visible');
     }
     if (v.t >= duration) {
       this.fsm.set(STATES.ENDED);
@@ -703,8 +725,10 @@ export class Game {
         const next = this.progress.complete(this.night);
         const final = this.night >= NIGHT_COUNT;
         if (final) this.progress.recordEnding(deviation ? 'deviation' : 'contained');
+        const newFiles = this.progress.unlockFiles(subjectsActive(this.sim));
+        this.workstation.setFiles(this.progress.files);
         this.endNext = next;
-        this.endScreen.showVictory(this.sim.getSummary(), { lines, next, final, deviation });
+        this.endScreen.showVictory(this.sim.getSummary(), { lines, next, final, deviation, newFiles });
       } else this.endScreen.showVictory(this.sim.getSummary());
     }
   }
@@ -839,24 +863,33 @@ export class Game {
     const focusK = this.player.override?.k ?? 0;
     const showFeed = this.workstationOpen && focusK > 0.92 && this.state === STATES.PLAYING;
     const observerFailure = this.state === STATES.FAILING && this.failure.entityId === ENTITY_IDS.OBSERVER;
+    const clamp01 = (x) => Math.max(0, Math.min(1, x));
+    // Two moments put the station itself on every screen: the Observer's failure
+    // (CAM 00, the station empty) and the contained ending (CAM 13, filed as CELL 05).
+    const stationFeed = observerFailure
+      ? {
+          cam: this.stationCam,
+          alpha: clamp01((this.failureProgress - 0.3) / 0.35),
+          staticAmount: 0.15 + this.failureProgress * 0.3,
+          dim: 1 - Math.max(0, (this.failure.t - (FAILURE_SECONDS - 2.5)) / 2.5)
+        }
+      : this.state === STATES.VICTORY && this.victory?.cell05At !== undefined
+        ? { cam: this.cell05Cam, alpha: clamp01((this.victory.t - this.victory.cell05At) / CELL05_CROSSFADE), staticAmount: 0.1, dim: 1 }
+        : null;
 
-    if (observerFailure) {
-      // Every screen shows CAM 00: the station, empty.
+    if (stationFeed) {
       if (!this.nextStationFeed || time > this.nextStationFeed) {
         this.nextStationFeed = time + 1 / 12;
         r.setRenderTarget(this.feeds.feedRT);
-        r.render(this.facility.scene, this.stationCam);
+        r.render(this.facility.scene, stationFeed.cam);
         r.setRenderTarget(null);
         this.feeds.renderMonitor({ time, staticAmount: 0.2, noSignal: 0, distort: 0 });
       }
       // Crossfade (never a cut) from the room into the station feed.
-      const alpha = Math.max(0, Math.min(1, (this.failureProgress - 0.3) / 0.35));
-      if (alpha >= 0.999) {
-        const dim = 1 - Math.max(0, (this.failure.t - (FAILURE_SECONDS - 2.5)) / 2.5);
-        this.feeds.renderToScreen({ time, staticAmount: 0.15 + this.failureProgress * 0.3, noSignal: 0, distort: 0, dim }, this.aspect);
+      if (stationFeed.alpha >= 0.999) {
+        this.feeds.renderToScreen({ time, staticAmount: stationFeed.staticAmount, noSignal: 0, distort: 0, dim: stationFeed.dim }, this.aspect);
         return;
       }
-      this.stationFeedAlpha = alpha;
     } else if (showFeed) {
       if (!this.nextFeed || time > this.nextFeed) {
         this.nextFeed = time + 1 / 24;
@@ -892,8 +925,8 @@ export class Game {
       desat: 0.12 + f * 0.6,
       tint
     });
-    if (observerFailure && this.stationFeedAlpha > 0) {
-      this.feeds.renderToScreen({ time, staticAmount: 0.15 + this.failureProgress * 0.3, noSignal: 0, distort: 0, alpha: this.stationFeedAlpha }, this.aspect);
+    if (stationFeed && stationFeed.alpha > 0) {
+      this.feeds.renderToScreen({ time, staticAmount: stationFeed.staticAmount, noSignal: 0, distort: 0, alpha: stationFeed.alpha }, this.aspect);
     }
   }
 

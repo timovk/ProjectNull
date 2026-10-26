@@ -23,6 +23,7 @@ const NIGHT_MESSAGES = {
     { id: 'start', at: 0.0, text: 'DIAGNOSTIC CYCLE 3 INITIATED. OPERATOR: CONTRACTOR-0417' },
     { id: 'request', at: 0.8, text: 'REQUEST FROM SUBLEVEL B: OPEN' },
     { id: 'denied', at: 2.4, text: 'REQUEST DENIED. REQUEST REPEATED' },
+    { id: 'origin', at: 2.5, text: 'REQUEST ORIGIN: CONTRACTOR-0317. CONTRACT CLOSED IN MARCH' },
     { id: 'seal', at: 4.0, text: 'CELL 05 SEAL INTEGRITY: 71%' }
   ],
   4: [

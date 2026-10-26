@@ -88,7 +88,7 @@ export class EndScreen {
     showScreen(this.node, true);
   }
 
-  showVictory(summary, { lines: victory = VICTORY_LINES, next = null, final = false, deviation = false } = {}) {
+  showVictory(summary, { lines: victory = VICTORY_LINES, next = null, final = false, deviation = false, newFiles = [] } = {}) {
     const run = this.run ?? { label: 'Night 1', again: 'PLAY NIGHT 1 AGAIN' };
     this.retryBtn.textContent = run.again;
     this.nightBtn.classList.toggle('hidden', !next);
@@ -116,10 +116,13 @@ export class EndScreen {
       deviation
         ? el('div', { class: 'end-note', text: 'You broke one rule on the last night, and WARDEN did not get its fifth subject. You are still yourself. Below Level 2, R. is waiting for you.' })
         : final
-          ? el('div', { class: 'end-note', text: `You kept every rule for ${NIGHT_COUNT} nights. Subjects accounted for: 5 of 5. The chair at the desk will never be empty again. R. left you a way out on Night 5; it is still there if you look for it.` })
+          ? el('div', { class: 'end-note', text: `You kept every rule for ${NIGHT_COUNT} nights. Subjects accounted for: 5 of 5. The station has a camera now, CAM 13, and WARDEN files the room as CELL 05. R. left you a way out on Night 5; it is still there if you look for it.` })
           : next
             ? el('div', { class: 'end-note', text: `Night ${next} is now unlocked. The subjects will be more active.` })
-            : ''
+            : '',
+      newFiles.length
+        ? el('div', { class: 'end-note', text: `New on the workstation's FILES tab: the record${newFiles.length > 1 ? 's' : ''} for ${listSubjects(newFiles)}.` })
+        : ''
     );
     showScreen(this.node, true);
   }
@@ -127,6 +130,12 @@ export class EndScreen {
   hide() {
     showScreen(this.node, false);
   }
+}
+
+/** ['SUBJECT_01', 'SUBJECT_03'] -> "Subject 01 and Subject 03" */
+function listSubjects(ids) {
+  const names = ids.map((id) => `Subject ${id.slice(-2)}`);
+  return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
 }
 
 function statRows(rows) {

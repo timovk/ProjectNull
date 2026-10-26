@@ -3,6 +3,9 @@ import { ROOMS, CAMERA_ROOMS } from '../config/FacilityLayout.js';
 import { FacilityMap, markerLegend } from './FacilityMap.js';
 import { POWER_CONFIG, ENTITY_IDS } from '../config/GameConfig.js';
 import { formatGameClock } from '../core/GameClock.js';
+import { SUBJECT_FILES, SUBJECT_ORDER } from '../content/SubjectFiles.js';
+
+const TABS = ['cameras', 'systems', 'log', 'files'];
 
 /** Camera ordering for hotkeys 1..9, 0, -, = */
 export const CAMERA_ORDER = [...CAMERA_ROOMS].sort((a, b) => ROOMS[a].camera.localeCompare(ROOMS[b].camera));
@@ -31,7 +34,7 @@ export class SurveillanceUI {
     this.status = el('div', { class: 'status-big' });
     this.timestamp = el('div', { class: 'timestamp' });
     this.tabs = {};
-    const tabBar = el('div', { class: 'ws-tabs' }, ['cameras', 'systems', 'log'].map((t) => {
+    const tabBar = el('div', { class: 'ws-tabs' }, TABS.map((t) => {
       const b = el('button', { class: 'ws-tab', text: t.toUpperCase(), onclick: () => this.setTab(t) });
       this.tabs[t] = b;
       return b;
@@ -45,13 +48,16 @@ export class SurveillanceUI {
     this.systemsView = el('div', { class: 'ws-panel ws-scroll hidden' }, [el('h3', { text: 'DIAGNOSTICS' }), this.systemsBody]);
     this.logBody = el('div');
     this.logView = el('div', { class: 'ws-panel ws-scroll hidden' }, [el('h3', { text: 'FACILITY TERMINAL' }), this.logBody]);
+    this.filesBody = el('div');
+    this.filesView = el('div', { class: 'ws-panel ws-scroll hidden' }, [el('h3', { text: 'WARDEN / SUBJECT RECORDS' }), this.filesBody]);
+    this.setFiles([]);
 
     this.node = el('div', { id: 'workstation', class: 'interactive hidden' }, [
       el('div', { class: 'feed-label' }, [this.cam, this.room, el('div', { class: 'rec', html: '<i></i>REC' })]),
       this.status,
       el('div', { class: 'help', html: '[1-0 - =] or click map: switch camera &nbsp; [ [ ] ] cycle &nbsp; [Tab] panels<br>[E] / [Esc] stand up. The night does not pause.' }),
       this.timestamp,
-      el('div', { class: 'side' }, [tabBar, this.camerasView, this.systemsView, this.logView])
+      el('div', { class: 'side' }, [tabBar, this.camerasView, this.systemsView, this.logView, this.filesView])
     ]);
     root.append(this.node);
     this.setTab('cameras');
@@ -71,12 +77,32 @@ export class SurveillanceUI {
     this.camerasView.classList.toggle('hidden', tab !== 'cameras');
     this.systemsView.classList.toggle('hidden', tab !== 'systems');
     this.logView.classList.toggle('hidden', tab !== 'log');
+    this.filesView.classList.toggle('hidden', tab !== 'files');
     this.lastLogCount = -1;
   }
 
   cycleTab() {
-    const order = ['cameras', 'systems', 'log'];
-    this.setTab(order[(order.indexOf(this.tab) + 1) % order.length]);
+    this.setTab(TABS[(TABS.indexOf(this.tab) + 1) % TABS.length]);
+  }
+
+  /** The FILES tab: unlocked subject records in full, locked ones as a hint. */
+  setFiles(unlocked) {
+    this.filesBody.replaceChildren(...SUBJECT_ORDER.map((id) => {
+      const f = SUBJECT_FILES[id];
+      if (!unlocked.includes(id)) {
+        return el('div', { class: 'subject-file locked' }, [
+          el('div', { class: 'sf-head', text: `${f.designation} / RECORD LOCKED` }),
+          el('div', { class: 'log-line', text: `Survive a night in which Subject ${f.designation.slice(-2)} leaves its cell.` })
+        ]);
+      }
+      return el('div', { class: 'subject-file' }, [
+        el('div', { class: 'sf-head', text: `${f.designation} / ${f.callSign}` }),
+        ...f.fields.map(([k, v]) => el('div', { class: 'diag-row' }, [el('span', { text: k }), el('span', { text: v })])),
+        el('div', { class: 'diag-row' }, [el('span', { text: 'Former name' }), el('span', { class: 'warn', text: '[WITHHELD]' })]),
+        el('p', { class: 'sf-text', text: f.detail }),
+        el('p', { class: 'sf-text sf-observed', text: `Observed: ${f.observed}` })
+      ]);
+    }));
   }
 
   show(visible) {

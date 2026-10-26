@@ -2,7 +2,7 @@
 
 This file is generated from the game's content by `npm run voice:script`. Do not edit it by hand; edit the lines in `src/content/` and regenerate.
 
-There are **71 lines** to record: 10 for R., the previous technician (radio), 11 for R., recorded (audio logs), 6 for Dr. Ines Varga (cassette), 44 for Facility announcer (automated). Lines that appear in several places are listed once.
+There are **73 lines** to record: 10 for R., the previous technician (radio), 12 for R., recorded (audio logs), 6 for Dr. Ines Varga (cassette), 45 for Facility announcer (automated). Lines that appear in several places are listed once.
 
 ## How to add a recording
 
@@ -36,7 +36,7 @@ There are **71 lines** to record: 10 for R., the previous technician (radio), 11
 | 9 | `radio_09.ogg` | That's everything I know. Six o'clock comes. It always does. ...I have to go. | Night 1 radio briefing, 152 s into the night |
 | 10 | `radio_deviation.ogg` | You found it. Good. Now come down. | Night 5, after the 6 AM report in the deviation ending |
 
-## R., recorded (audio logs) (11 lines)
+## R., recorded (audio logs) (12 lines)
 
 **Direction:** The same person as R. on the radio, more exhausted. "Log six" is weeks before the game; "Log nine" is recorded far below, later still. Slower, sometimes close to a whisper, with pauses where the text has "...". The game adds tape hiss and a lo-fi filter.
 
@@ -52,7 +52,8 @@ There are **71 lines** to record: 10 for R., the previous technician (radio), 11
 | 8 | `tape_r9_03.ogg` | I found her. Varga. She's been down here since March. She's... mostly still her. | Telemetry recorder in the electrical room (from Night 4), line 3 |
 | 9 | `tape_r9_04.ogg` | She wrote it. WARDEN. Every rule you're following up there, she wrote. | Telemetry recorder in the electrical room (from Night 4), line 4 |
 | 10 | `tape_r9_05.ogg` | Five perfect nights and you're the fifth. That's what it's for. That's what the seal is counting. | Telemetry recorder in the electrical room (from Night 4), line 5 |
-| 11 | `tape_r9_06.ogg` | I'll tell you how to break it. Not on the radio. It listens to the radio. | Telemetry recorder in the electrical room (from Night 4), line 6 |
+| 11 | `tape_r9_06.ogg` | That request on your terminal last night, from Sublevel B? That was me, asking the door to open. It said no. | Telemetry recorder in the electrical room (from Night 4), line 6 |
+| 12 | `tape_r9_07.ogg` | I'll tell you how to break it. Not on the radio. It listens to the radio. | Telemetry recorder in the electrical room (from Night 4), line 7 |
 
 ## Dr. Ines Varga (cassette) (6 lines)
 
@@ -67,7 +68,7 @@ There are **71 lines** to record: 10 for R., the previous technician (radio), 11
 | 5 | `tape_iv_05.ogg` | If I finish tomorrow, nobody will ever have to do this again. That is what they told me. | Cassette at the Sublevel B door (Night 5), line 5 |
 | 6 | `tape_iv_06.ogg` | I don't think I will. | Cassette at the Sublevel B door (Night 5), line 6 |
 
-## Facility announcer (automated) (44 lines)
+## Facility announcer (automated) (45 lines)
 
 **Direction:** A calm, polite, automated voice with no emotion. Even pace, a short pause at every full stop. It should feel slightly too calm for what it says. The game adds a hall echo.
 
@@ -86,35 +87,36 @@ There are **71 lines** to record: 10 for R., the previous technician (radio), 11
 | 11 | `facility_n3_start.ogg` | Diagnostic cycle 3 initiated. Operator. Contractor zero four one seven. | Night 3 terminal message at 0.00 h |
 | 12 | `facility_n3_request.ogg` | Request from Sublevel B. Open. | Night 3 terminal message at 0.80 h |
 | 13 | `facility_n3_denied.ogg` | Request denied. Request repeated. | Night 3 terminal message at 2.40 h |
-| 14 | `facility_n3_seal.ogg` | Cell zero five seal integrity. 71 percent. | Night 3 terminal message at 4.00 h |
-| 15 | `facility_n4_start.ogg` | Diagnostic cycle 4 initiated. Operator. Contractor zero four one seven. | Night 4 terminal message at 0.00 h |
-| 16 | `facility_n4_baseline.ogg` | Subject response above baseline. | Night 4 terminal message at 1.00 h |
-| 17 | `facility_n4_seal.ogg` | Cell zero five seal integrity. 40 percent. | Night 4 terminal message at 2.50 h |
-| 18 | `facility_n4_count.ogg` | Operator count. 3. | Night 4 terminal message at 4.20 h |
-| 19 | `facility_n5_start.ogg` | Final diagnostic cycle initiated. Operator. Contractor zero four one seven. | Night 5 terminal message at 0.00 h |
-| 20 | `facility_n5_seal.ogg` | Cell zero five seal integrity. 12 percent. | Night 5 terminal message at 1.50 h |
-| 21 | `facility_n5_accounted.ogg` | All subjects accounted for except one. | Night 5 terminal message at 3.00 h |
-| 22 | `facility_n5_almost.ogg` | Please remain at your station. We are almost done. | Night 5 terminal message at 5.20 h |
-| 23 | `facility_gate_cell_a_lock.ogg` | Containment A. Cell lock released. Authorization. None. | When this gate opens (every night) |
-| 24 | `facility_gate_cell_b_lock.ogg` | Containment B. Cell lock released. Authorization. None. | When this gate opens (every night) |
-| 25 | `facility_gate_acoustic_seal.ogg` | Acoustics lab. Seal disengaged. | When this gate opens (every night) |
-| 26 | `facility_gate_isolation_bulkhead.ogg` | Isolation ward. Bulkhead released by facility automation. | When this gate opens (every night) |
-| 27 | `facility_deviation_logged.ogg` | Operator absent from station. Deviation logged. | Night 5, when the operator touches the Sublevel B door after 5 AM |
-| 28 | `facility_deviation_1.ogg` | Diagnostic cycle 5 complete. | Night 5 deviation ending, 6 AM line 1 |
-| 29 | `facility_deviation_2.ogg` | Operator deviation logged. Sublevel B access point. | Night 5 deviation ending, 6 AM line 2 |
-| 30 | `facility_deviation_3.ogg` | Subjects accounted for. 4 of 5. | Night 5 deviation ending, 6 AM line 3 (and 4 more) |
-| 31 | `facility_deviation_4.ogg` | Operator status. Retained. Series restarted. | Night 5 deviation ending, 6 AM line 4 |
-| 32 | `facility_morning_n1_1.ogg` | Diagnostic cycle 1 complete. | Night 1 at 6 AM, morning line 1 |
-| 33 | `facility_morning_n1_2.ogg` | Monitoring infrastructure. Restored. | Night 1 at 6 AM, morning line 2 (and 3 more) |
-| 34 | `facility_morning_n1_4.ogg` | Operator status. Retained for cycle 2. | Night 1 at 6 AM, morning line 4 |
-| 35 | `facility_morning_n2_1.ogg` | Diagnostic cycle 2 complete. | Night 2 at 6 AM, morning line 1 |
-| 36 | `facility_morning_n2_4.ogg` | Operator status. Retained for cycle 3. | Night 2 at 6 AM, morning line 4 |
-| 37 | `facility_morning_n3_1.ogg` | Diagnostic cycle 3 complete. | Night 3 at 6 AM, morning line 1 |
-| 38 | `facility_morning_n3_4.ogg` | Operator status. Retained for cycle 4. | Night 3 at 6 AM, morning line 4 |
-| 39 | `facility_morning_n4_1.ogg` | Diagnostic cycle 4 complete. | Night 4 at 6 AM, morning line 1 |
-| 40 | `facility_morning_n4_4.ogg` | Operator status. Retained for cycle 5. | Night 4 at 6 AM, morning line 4 |
-| 41 | `facility_morning_n5_1.ogg` | Diagnostic series complete. | Night 5 at 6 AM, morning line 1 |
-| 42 | `facility_morning_n5_2.ogg` | Subjects accounted for. 5 of 5. | Night 5 at 6 AM, morning line 2 |
-| 43 | `facility_morning_n5_3.ogg` | Operator status. Contained. | Night 5 at 6 AM, morning line 3 |
-| 44 | `facility_morning_n5_4.ogg` | Thank you for your participation. | Night 5 at 6 AM, morning line 4 |
+| 14 | `facility_n3_origin.ogg` | Request origin. Contractor zero three one seven. Contract closed in March. | Night 3 terminal message at 2.50 h |
+| 15 | `facility_n3_seal.ogg` | Cell zero five seal integrity. 71 percent. | Night 3 terminal message at 4.00 h |
+| 16 | `facility_n4_start.ogg` | Diagnostic cycle 4 initiated. Operator. Contractor zero four one seven. | Night 4 terminal message at 0.00 h |
+| 17 | `facility_n4_baseline.ogg` | Subject response above baseline. | Night 4 terminal message at 1.00 h |
+| 18 | `facility_n4_seal.ogg` | Cell zero five seal integrity. 40 percent. | Night 4 terminal message at 2.50 h |
+| 19 | `facility_n4_count.ogg` | Operator count. 3. | Night 4 terminal message at 4.20 h |
+| 20 | `facility_n5_start.ogg` | Final diagnostic cycle initiated. Operator. Contractor zero four one seven. | Night 5 terminal message at 0.00 h |
+| 21 | `facility_n5_seal.ogg` | Cell zero five seal integrity. 12 percent. | Night 5 terminal message at 1.50 h |
+| 22 | `facility_n5_accounted.ogg` | All subjects accounted for except one. | Night 5 terminal message at 3.00 h |
+| 23 | `facility_n5_almost.ogg` | Please remain at your station. We are almost done. | Night 5 terminal message at 5.20 h |
+| 24 | `facility_gate_cell_a_lock.ogg` | Containment A. Cell lock released. Authorization. None. | When this gate opens (every night) |
+| 25 | `facility_gate_cell_b_lock.ogg` | Containment B. Cell lock released. Authorization. None. | When this gate opens (every night) |
+| 26 | `facility_gate_acoustic_seal.ogg` | Acoustics lab. Seal disengaged. | When this gate opens (every night) |
+| 27 | `facility_gate_isolation_bulkhead.ogg` | Isolation ward. Bulkhead released by facility automation. | When this gate opens (every night) |
+| 28 | `facility_deviation_logged.ogg` | Operator absent from station. Deviation logged. | Night 5, when the operator touches the Sublevel B door after 5 AM |
+| 29 | `facility_deviation_1.ogg` | Diagnostic cycle 5 complete. | Night 5 deviation ending, 6 AM line 1 |
+| 30 | `facility_deviation_2.ogg` | Operator deviation logged. Sublevel B access point. | Night 5 deviation ending, 6 AM line 2 |
+| 31 | `facility_deviation_3.ogg` | Subjects accounted for. 4 of 5. | Night 5 deviation ending, 6 AM line 3 (and 4 more) |
+| 32 | `facility_deviation_4.ogg` | Operator status. Retained. Series restarted. | Night 5 deviation ending, 6 AM line 4 |
+| 33 | `facility_morning_n1_1.ogg` | Diagnostic cycle 1 complete. | Night 1 at 6 AM, morning line 1 |
+| 34 | `facility_morning_n1_2.ogg` | Monitoring infrastructure. Restored. | Night 1 at 6 AM, morning line 2 (and 3 more) |
+| 35 | `facility_morning_n1_4.ogg` | Operator status. Retained for cycle 2. | Night 1 at 6 AM, morning line 4 |
+| 36 | `facility_morning_n2_1.ogg` | Diagnostic cycle 2 complete. | Night 2 at 6 AM, morning line 1 |
+| 37 | `facility_morning_n2_4.ogg` | Operator status. Retained for cycle 3. | Night 2 at 6 AM, morning line 4 |
+| 38 | `facility_morning_n3_1.ogg` | Diagnostic cycle 3 complete. | Night 3 at 6 AM, morning line 1 |
+| 39 | `facility_morning_n3_4.ogg` | Operator status. Retained for cycle 4. | Night 3 at 6 AM, morning line 4 |
+| 40 | `facility_morning_n4_1.ogg` | Diagnostic cycle 4 complete. | Night 4 at 6 AM, morning line 1 |
+| 41 | `facility_morning_n4_4.ogg` | Operator status. Retained for cycle 5. | Night 4 at 6 AM, morning line 4 |
+| 42 | `facility_morning_n5_1.ogg` | Diagnostic series complete. | Night 5 at 6 AM, morning line 1 |
+| 43 | `facility_morning_n5_2.ogg` | Subjects accounted for. 5 of 5. | Night 5 at 6 AM, morning line 2 |
+| 44 | `facility_morning_n5_3.ogg` | Operator status. Contained. | Night 5 at 6 AM, morning line 3 |
+| 45 | `facility_morning_n5_4.ogg` | Thank you for your participation. | Night 5 at 6 AM, morning line 4 |
 

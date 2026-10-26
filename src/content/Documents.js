@@ -225,8 +225,9 @@ export const TAPES = {
       { at: 10.5, text: 'TAPE: "I found her. Varga. She\'s been down here since March. She\'s... mostly still her."' },
       { at: 17.5, text: 'TAPE: "She wrote it. WARDEN. Every rule you\'re following up there, she wrote."' },
       { at: 24, text: 'TAPE: "Five perfect nights and you\'re the fifth. That\'s what it\'s for. That\'s what the seal is counting."' },
-      { at: 31.5, text: 'TAPE: "I\'ll tell you how to break it. Not on the radio. It listens to the radio."' },
-      { at: 37.5, text: '[The reel runs out]' }
+      { at: 31.5, text: 'TAPE: "That request on your terminal last night, from Sublevel B? That was me, asking the door to open. It said no."' },
+      { at: 38.5, text: 'TAPE: "I\'ll tell you how to break it. Not on the radio. It listens to the radio."' },
+      { at: 44.5, text: '[The reel runs out]' }
     ]
   },
   cycle_four: {

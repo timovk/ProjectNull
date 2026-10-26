@@ -398,7 +398,7 @@ R.'s tape note was right: "It isn't the fifth one. It isn't anyone." But R. was 
 ### What this means for players
 
 - The knock is the past repeating, not a threat. It never gets louder and never comes closer.
-- The "request to open" on Night 3 is a real person, R., and the game should make that clear by the end of the series (see section 17).
+- The "request to open" on Night 3 is a real person, R. **[canon]** The Night 3 terminal names its origin, CONTRACTOR-0317, and R. confirms it on the Night 4 telemetry reel ("That was me, asking the door to open. It said no.").
 
 ---
 
@@ -518,8 +518,8 @@ Helix withheld the four names when the subjects were reassigned. The roles are e
 
 ### Small touches
 
-- **Subject files** on the workstation, unlocked after surviving a night with that subject active: former role, anchor and one personal detail, without the name.
-- **CAM 13 in the contained ending:** the empty desk chair, on a feed labelled CELL 05.
+- **Subject files** on the workstation, unlocked after surviving a night with that subject active: former role, anchor and one personal detail, without the name. **[canon]** The FILES tab, unlocked by a survived campaign night in which the subject left its cell.
+- **CAM 13 in the contained ending:** the empty desk chair, on a feed labelled CELL 05. **[canon]**
 - **The deviation ending** from section 16. [decided]
 
 ---

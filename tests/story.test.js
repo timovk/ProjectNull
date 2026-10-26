@@ -4,7 +4,9 @@ import { Simulation } from '../src/core/Simulation.js';
 import { Progress } from '../src/core/Progress.js';
 import { DOCUMENTS, TAPES, NIGHT_ITEMS } from '../src/content/Documents.js';
 import { DEVIATION_NOTE_DOC, DEVIATION_WINDOW, deviationAvailable } from '../src/content/Endings.js';
-import { NIGHT_COUNT } from '../src/config/GameConfig.js';
+import { NIGHT_COUNT, NIGHT_SCHEDULES } from '../src/config/GameConfig.js';
+import { SUBJECT_FILES, SUBJECT_ORDER, subjectsActive } from '../src/content/SubjectFiles.js';
+import { terminalSchedule } from '../src/content/TerminalMessages.js';
 
 function memoryStorage() {
   const data = new Map();
@@ -60,4 +62,49 @@ test('progress remembers the note and the endings', () => {
   assert.equal(again.deviationNoteRead, true);
   assert.equal(again.hasEnding('deviation'), true);
   assert.equal(again.hasEnding('contained'), false);
+});
+
+test('subject records cover all four subjects and keep their former names out', () => {
+  const formerNames = /Brandt|Osei|Aranda|Pell|Tomas|Mira|Felix|Jonah/;
+  assert.equal(SUBJECT_ORDER.length, 4);
+  for (const id of SUBJECT_ORDER) {
+    const f = SUBJECT_FILES[id];
+    assert.ok(f.designation.endsWith(id.slice(-2)), `${id} designation`);
+    assert.ok(f.fields.some(([k]) => k === 'Former role') && f.fields.some(([k]) => k === 'Anchor'), `${id} fields`);
+    assert.doesNotMatch([f.callSign, f.detail, f.observed, ...f.fields.flat()].join(' '), formerNames);
+  }
+});
+
+test('a record unlocks for each subject that left its cell during a survived night', () => {
+  const sim = new Simulation({ seed: 'files', schedule: NIGHT_SCHEDULES[1] });
+  assert.deepEqual(subjectsActive(sim), [], 'nobody has moved at midnight');
+  sim.runFor(sim.config.nightDurationSeconds / 2);
+  const active = subjectsActive(sim);
+  assert.ok(active.includes('SUBJECT_01'), 'the Wanderer is out by 3 AM on Night 1');
+  for (const id of active) assert.ok(sim.ai.get(id).stats.moves > 0);
+});
+
+test('progress stores subject records once, in order, and migrates older saves', () => {
+  const storage = memoryStorage();
+  const p = new Progress({ storage });
+  assert.deepEqual(p.files, []);
+  assert.deepEqual(p.unlockFiles(['SUBJECT_03', 'SUBJECT_01']), ['SUBJECT_01', 'SUBJECT_03']);
+  assert.deepEqual(p.unlockFiles(['SUBJECT_01', 'SUBJECT_02']), ['SUBJECT_02']);
+  assert.deepEqual(p.unlockFiles(['SUBJECT_02']), []);
+  assert.deepEqual(new Progress({ storage }).files, ['SUBJECT_01', 'SUBJECT_02', 'SUBJECT_03']);
+
+  const old = memoryStorage();
+  old.setItem('project-null.progress.v1', JSON.stringify({ unlocked: 3, completed: [1, 2] }));
+  assert.deepEqual(new Progress({ storage: old }).files, SUBJECT_ORDER);
+  const fresh = memoryStorage();
+  fresh.setItem('project-null.progress.v1', JSON.stringify({ unlocked: 1, completed: [] }));
+  assert.deepEqual(new Progress({ storage: fresh }).files, []);
+});
+
+test('the Night 3 request from Sublevel B is traced to R., and R. confirms it on Night 4', () => {
+  const n3 = terminalSchedule(3).map((m) => m.text).join('\n');
+  assert.match(n3, /REQUEST FROM SUBLEVEL B/);
+  assert.match(n3, /CONTRACTOR-0317/);
+  assert.ok(TAPES.log_nine.lines.some((l) => /request on your terminal/.test(l.text) && /That was me/.test(l.text)));
+  assert.equal(NIGHT_ITEMS.log_nine, 4);
 });

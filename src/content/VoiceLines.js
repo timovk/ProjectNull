@@ -46,7 +46,7 @@ export const DEVIATION_RADIO_ID = 'radio_deviation';
 /** Terminal text (ALL CAPS, codes) into something a voice can say naturally. */
 export function speakable(text) {
   let t = text
-    .replace(/CONTRACTOR-0417/g, 'contractor zero four one seven')
+    .replace(/CONTRACTOR-0([1-4])17/g, (m, n) => `contractor zero ${['one', 'two', 'three', 'four'][n - 1]} one seven`)
     .replace(/CELL 05/g, 'cell zero five')
     .replace(/(\d+)\s*\/\s*(\d+)/g, '$1 of $2')
     .replace(/(\d+)%/g, '$1 percent')
@@ -54,7 +54,7 @@ export function speakable(text) {
     .replace(/:\s+/g, '. ')
     .toLowerCase();
   t = t.replace(/(^|[.!?]\s+)([a-z])/g, (m, p, c) => p + c.toUpperCase());
-  t = t.replace(/\bsublevel b\b/gi, 'Sublevel B').replace(/\bcontainment ([ab])\b/gi, (m, l) => `Containment ${l.toUpperCase()}`);
+  t = t.replace(/\bmarch\b/g, 'March').replace(/\bsublevel b\b/gi, 'Sublevel B').replace(/\bcontainment ([ab])\b/gi, (m, l) => `Containment ${l.toUpperCase()}`);
   if (!/[.!?]$/.test(t)) t += '.';
   return t;
 }

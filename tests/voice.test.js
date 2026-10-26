@@ -55,6 +55,7 @@ test('terminal text is turned into natural speech', () => {
   assert.equal(speakable('NIGHT 4 / 5 COMPLETE. POWER 12%'), 'Night 4 of 5 complete. Power 12 percent.');
   assert.equal(speakable('LOG: CONTAINMENT A RELEASED'), 'Log. Containment A released.');
   assert.equal(speakable('SUBJECT 03 (RETAINED)'), 'Subject 03, retained.');
+  assert.equal(speakable('REQUEST ORIGIN: CONTRACTOR-0317. CONTRACT CLOSED IN MARCH'), 'Request origin. Contractor zero three one seven. Contract closed in March.');
 });
 
 test('manifest maps recordings to lines, prefers ogg and ignores unknown files', () => {

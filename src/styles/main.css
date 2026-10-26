@@ -327,16 +327,16 @@ button {
   font-size: 13px;
 }
 #workstation.visible { opacity: 1; }
-#workstation .feed-label {
+#workstation .feed-label, #cell05-feed .feed-label {
   position: absolute;
   top: 18px;
   left: 22px;
   text-shadow: 0 0 8px #000;
 }
-#workstation .feed-label .cam { font-size: 22px; letter-spacing: 0.14em; color: #e8f4ea; }
-#workstation .feed-label .room { font-size: 13px; color: var(--dim); letter-spacing: 0.2em; margin-top: 2px; }
-#workstation .rec { color: var(--red); margin-top: 8px; font-size: 12px; letter-spacing: 0.2em; }
-#workstation .rec i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--red); margin-right: 6px; animation: blink 1.6s infinite; }
+#workstation .feed-label .cam, #cell05-feed .cam { font-size: 22px; letter-spacing: 0.14em; color: #e8f4ea; }
+#workstation .feed-label .room, #cell05-feed .room { font-size: 13px; color: var(--dim); letter-spacing: 0.2em; margin-top: 2px; }
+#workstation .rec, #cell05-feed .rec { color: var(--red); margin-top: 8px; font-size: 12px; letter-spacing: 0.2em; }
+#workstation .rec i, #cell05-feed .rec i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--red); margin-right: 6px; animation: blink 1.6s infinite; }
 @keyframes blink { 50% { opacity: 0.15; } }
 #workstation .status-big {
   position: absolute;
@@ -350,7 +350,9 @@ button {
   text-align: center;
 }
 #workstation .status-big small { display: block; font-size: 11px; color: var(--dim); letter-spacing: 0.2em; margin-top: 6px; }
-#workstation .timestamp { position: absolute; left: 22px; bottom: 20px; color: #dfe8de; letter-spacing: 0.12em; text-shadow: 0 0 6px #000; }
+#workstation .timestamp, #cell05-feed .timestamp { position: absolute; left: 22px; bottom: 20px; color: #dfe8de; letter-spacing: 0.12em; text-shadow: 0 0 6px #000; }
+#cell05-feed { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 2.4s ease; font-size: 13px; }
+#cell05-feed.visible { opacity: 1; }
 #workstation .side {
   position: absolute;
   top: 16px;
@@ -425,6 +427,15 @@ button {
 .log-line .t { color: var(--faint); margin-right: 6px; }
 .log-line.facility { color: #9dffbf; }
 .log-line.alert { color: var(--red); }
+.subject-file { padding: 8px 0 12px; border-bottom: 1px solid var(--line); }
+.subject-file:last-child { border-bottom: 0; }
+.subject-file .sf-head { font-size: 12px; letter-spacing: 0.16em; color: #e8f4ea; margin-bottom: 6px; }
+.subject-file.locked .sf-head { color: var(--faint); }
+.subject-file .diag-row { gap: 12px; font-size: 12px; }
+.subject-file .diag-row span:first-child { color: var(--dim); flex: none; }
+.subject-file .diag-row span:last-child { text-align: right; }
+.subject-file .sf-text { font-size: 12px; line-height: 1.5; color: var(--text); margin: 8px 0 0; }
+.subject-file .sf-observed { color: var(--dim); font-style: italic; }
 #workstation .help { position: absolute; left: 22px; bottom: 46px; color: var(--faint); font-size: 11px; letter-spacing: 0.06em; line-height: 1.7; text-shadow: 0 0 6px #000; }
 
 /* ------------------------------------------------------------ document */

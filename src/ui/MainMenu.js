@@ -2,6 +2,7 @@ import { el, showScreen } from './dom.js';
 import { HowItWorks } from './HowItWorks.js';
 import { CustomNight } from './CustomNight.js';
 import { NIGHT_COUNT } from '../config/GameConfig.js';
+import { DEVIATION_MENU_LINE } from '../content/Endings.js';
 import { version } from '../../package.json';
 
 export const CONTROLS = [
@@ -63,6 +64,7 @@ export class MainMenu {
       el('div', { class: 'menu-card' }, [
         el('h1', { class: 'title', text: 'PROJECT NULL' }),
         el('div', { class: 'subtitle', text: 'FIVE NIGHTS  /  RESEARCH FACILITY N-17' }),
+        (this.rLine = el('div', { class: 'menu-r-line hidden', text: DEVIATION_MENU_LINE })),
         el('div', { class: 'menu-list' }, [
           el('button', { class: 'menu-btn primary', onclick: () => this.onPractice() }, ['PRACTICE NIGHT', el('small', { text: 'Guided. Cannot be lost. Recommended for your first time.' })]),
           (this.continueBtn = el('button', { class: 'menu-btn', onclick: () => this.onStart(this.progress?.current ?? 1) })),
@@ -73,7 +75,7 @@ export class MainMenu {
           el('button', { class: 'menu-btn', onclick: () => this.show('howItWorks') }, ['HOW IT WORKS', el('small', { text: 'The maths and behaviour behind the AI, with live calculators.' })]),
           el('button', { class: 'menu-btn', text: 'CREDITS', onclick: () => this.show('credits') })
         ]),
-        el('div', { class: 'menu-footer', text: `v${version}  /  HELIX RESEARCH DIRECTORATE  /  CONTRACT 4471` })
+        (this.footer = el('div', { class: 'menu-footer', text: `v${version}  /  HELIX RESEARCH DIRECTORATE  /  CONTRACT 4471` }))
       ])
     ]);
 
@@ -109,6 +111,10 @@ export class MainMenu {
   refreshNights() {
     const p = this.progress;
     if (!p) return;
+    // After the deviation ending, R. is waiting below, and the contract is not over.
+    const deviated = p.hasEnding?.('deviation') ?? false;
+    this.rLine.classList.toggle('hidden', !deviated);
+    this.footer.textContent = `v${version}  /  HELIX RESEARCH DIRECTORATE  /  CONTRACT 4471${deviated ? '  /  SERIES RESTARTED' : ''}`;
     const done = [...Array(NIGHT_COUNT)].filter((_, i) => p.isCompleted(i + 1)).length;
     const n = p.current;
     this.continueBtn.replaceChildren(

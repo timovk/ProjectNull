@@ -4,7 +4,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { VOICE_LINES, SPEAKERS } from '../src/content/VoiceLines.js';
 
-const ORDER = ['R', 'TAPE', 'FACILITY'];
+const ORDER = ['R', 'TAPE', 'VARGA', 'FACILITY'];
 
 export function renderVoiceScript() {
   const count = (sp) => VOICE_LINES.filter((l) => l.speaker === sp).length;

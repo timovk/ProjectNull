@@ -24,7 +24,7 @@ This guide assumes the [Night 1 guide](GUIDE_N1.md) and the six habits from the 
 | Patient and Echo at the same time | 2 or 3 times | **about 3 times** |
 | Power left at 6 AM | about 16% | about 14% |
 
-Night 5 has its own terminal messages, and it ends differently. No spoilers here.
+Night 5 has its own terminal messages, and **two endings**. No spoilers here, except one: read everything on the desk at the start of the night. R. left you something.
 
 ## The plan
 

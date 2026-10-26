@@ -2,7 +2,7 @@
 
 This file is generated from the game's content by `npm run voice:script`. Do not edit it by hand; edit the lines in `src/content/` and regenerate.
 
-There are **55 lines** to record: 9 for R., the previous technician (radio), 6 for R., an older recording (audio log), 40 for Facility announcer (automated). Lines that appear in several places are listed once.
+There are **71 lines** to record: 10 for R., the previous technician (radio), 11 for R., recorded (audio logs), 6 for Dr. Ines Varga (cassette), 44 for Facility announcer (automated). Lines that appear in several places are listed once.
 
 ## How to add a recording
 
@@ -19,7 +19,7 @@ There are **55 lines** to record: 9 for R., the previous technician (radio), 6 f
 - The game never plays voices suddenly or loudly. It fades every clip in and caps its level, so do not shout to compensate.
 - Say the line exactly as written. Text in the game stays the same even if the delivery varies a little.
 
-## R., the previous technician (radio) (9 lines)
+## R., the previous technician (radio) (10 lines)
 
 **Direction:** Tired, kind, a little scared. Speaks quietly, as if someone might overhear. Plain, natural delivery; never theatrical. The game adds the radio filter and crackle, so record clean and close to the mic.
 
@@ -34,10 +34,11 @@ There are **55 lines** to record: 9 for R., the previous technician (radio), 6 f
 | 7 | `radio_07.ogg` | And B's open. The pale one. Look at it now and then. Never stare at it. Never forget about it. | Night 1 radio briefing, 114 s into the night |
 | 8 | `radio_08.ogg` | The big one sleeps till late. When it's at a door, a door won't hold it. Lever on the back wall. Hold the field till it leaves. | Night 1 radio briefing, 133 s into the night |
 | 9 | `radio_09.ogg` | That's everything I know. Six o'clock comes. It always does. ...I have to go. | Night 1 radio briefing, 152 s into the night |
+| 10 | `radio_deviation.ogg` | You found it. Good. Now come down. | Night 5, after the 6 AM report in the deviation ending |
 
-## R., an older recording (audio log) (6 lines)
+## R., recorded (audio logs) (11 lines)
 
-**Direction:** The same person as R., weeks earlier and more exhausted. Slower, sometimes close to a whisper, with pauses where the text has "...". The game adds tape hiss and a lo-fi filter.
+**Direction:** The same person as R. on the radio, more exhausted. "Log six" is weeks before the game; "Log nine" is recorded far below, later still. Slower, sometimes close to a whisper, with pauses where the text has "...". The game adds tape hiss and a lo-fi filter.
 
 | # | File name | Line | When it plays |
 | --- | --- | --- | --- |
@@ -47,8 +48,26 @@ There are **55 lines** to record: 9 for R., the previous technician (radio), 6 f
 | 4 | `tape_04.ogg` | One in twenty, early on. By five it's seven in twenty. I wrote it on the board. | Audio log in the electrical room, line 4 |
 | 5 | `tape_05.ogg` | If you're hearing this, you're the new contractor. Keep the doors shut and your voice down. | Audio log in the electrical room, line 5 |
 | 6 | `tape_06.ogg` | And count them. Every hour. Count them. There should be five. | Audio log in the electrical room, line 6 |
+| 7 | `tape_r9_02.ogg` | Log nine. If that's what this is. I'm below. The machine room still has power. | Telemetry recorder in the electrical room (from Night 4), line 2 |
+| 8 | `tape_r9_03.ogg` | I found her. Varga. She's been down here since March. She's... mostly still her. | Telemetry recorder in the electrical room (from Night 4), line 3 |
+| 9 | `tape_r9_04.ogg` | She wrote it. WARDEN. Every rule you're following up there, she wrote. | Telemetry recorder in the electrical room (from Night 4), line 4 |
+| 10 | `tape_r9_05.ogg` | Five perfect nights and you're the fifth. That's what it's for. That's what the seal is counting. | Telemetry recorder in the electrical room (from Night 4), line 5 |
+| 11 | `tape_r9_06.ogg` | I'll tell you how to break it. Not on the radio. It listens to the radio. | Telemetry recorder in the electrical room (from Night 4), line 6 |
 
-## Facility announcer (automated) (40 lines)
+## Dr. Ines Varga (cassette) (6 lines)
+
+**Direction:** A scientist in her early forties recording a private log the night before she refuses. Calm, precise and quiet, with resolve underneath. No crying, no drama: the weight is in how plainly she says it. The game adds tape hiss and a lo-fi filter.
+
+| # | File name | Line | When it plays |
+| --- | --- | --- | --- |
+| 1 | `tape_iv_01.ogg` | Cycle four. Ines Varga, operator candidate. | Cassette at the Sublevel B door (Night 5), line 1 |
+| 2 | `tape_iv_02.ogg` | Four nights without a mistake. WARDEN is very pleased with me. | Cassette at the Sublevel B door (Night 5), line 2 |
+| 3 | `tape_iv_03.ogg` | I wrote every rule in this station. Tomorrow I become them. | Cassette at the Sublevel B door (Night 5), line 3 |
+| 4 | `tape_iv_04.ogg` | The guard still walks his rounds. The analyst still watches. They are still in there, somewhere. | Cassette at the Sublevel B door (Night 5), line 4 |
+| 5 | `tape_iv_05.ogg` | If I finish tomorrow, nobody will ever have to do this again. That is what they told me. | Cassette at the Sublevel B door (Night 5), line 5 |
+| 6 | `tape_iv_06.ogg` | I don't think I will. | Cassette at the Sublevel B door (Night 5), line 6 |
+
+## Facility announcer (automated) (44 lines)
 
 **Direction:** A calm, polite, automated voice with no emotion. Even pace, a short pause at every full stop. It should feel slightly too calm for what it says. The game adds a hall echo.
 
@@ -80,18 +99,22 @@ There are **55 lines** to record: 9 for R., the previous technician (radio), 6 f
 | 24 | `facility_gate_cell_b_lock.ogg` | Containment B. Cell lock released. Authorization. None. | When this gate opens (every night) |
 | 25 | `facility_gate_acoustic_seal.ogg` | Acoustics lab. Seal disengaged. | When this gate opens (every night) |
 | 26 | `facility_gate_isolation_bulkhead.ogg` | Isolation ward. Bulkhead released by facility automation. | When this gate opens (every night) |
-| 27 | `facility_morning_n1_1.ogg` | Diagnostic cycle 1 complete. | Night 1 at 6 AM, morning line 1 |
-| 28 | `facility_morning_n1_2.ogg` | Monitoring infrastructure. Restored. | Night 1 at 6 AM, morning line 2 (and 3 more) |
-| 29 | `facility_morning_n1_3.ogg` | Subjects accounted for. 4 of 5. | Night 1 at 6 AM, morning line 3 (and 3 more) |
-| 30 | `facility_morning_n1_4.ogg` | Operator status. Retained for cycle 2. | Night 1 at 6 AM, morning line 4 |
-| 31 | `facility_morning_n2_1.ogg` | Diagnostic cycle 2 complete. | Night 2 at 6 AM, morning line 1 |
-| 32 | `facility_morning_n2_4.ogg` | Operator status. Retained for cycle 3. | Night 2 at 6 AM, morning line 4 |
-| 33 | `facility_morning_n3_1.ogg` | Diagnostic cycle 3 complete. | Night 3 at 6 AM, morning line 1 |
-| 34 | `facility_morning_n3_4.ogg` | Operator status. Retained for cycle 4. | Night 3 at 6 AM, morning line 4 |
-| 35 | `facility_morning_n4_1.ogg` | Diagnostic cycle 4 complete. | Night 4 at 6 AM, morning line 1 |
-| 36 | `facility_morning_n4_4.ogg` | Operator status. Retained for cycle 5. | Night 4 at 6 AM, morning line 4 |
-| 37 | `facility_morning_n5_1.ogg` | Diagnostic series complete. | Night 5 at 6 AM, morning line 1 |
-| 38 | `facility_morning_n5_2.ogg` | Subjects accounted for. 5 of 5. | Night 5 at 6 AM, morning line 2 |
-| 39 | `facility_morning_n5_3.ogg` | Operator status. Contained. | Night 5 at 6 AM, morning line 3 |
-| 40 | `facility_morning_n5_4.ogg` | Thank you for your participation. | Night 5 at 6 AM, morning line 4 |
+| 27 | `facility_deviation_logged.ogg` | Operator absent from station. Deviation logged. | Night 5, when the operator touches the Sublevel B door after 5 AM |
+| 28 | `facility_deviation_1.ogg` | Diagnostic cycle 5 complete. | Night 5 deviation ending, 6 AM line 1 |
+| 29 | `facility_deviation_2.ogg` | Operator deviation logged. Sublevel B access point. | Night 5 deviation ending, 6 AM line 2 |
+| 30 | `facility_deviation_3.ogg` | Subjects accounted for. 4 of 5. | Night 5 deviation ending, 6 AM line 3 (and 4 more) |
+| 31 | `facility_deviation_4.ogg` | Operator status. Retained. Series restarted. | Night 5 deviation ending, 6 AM line 4 |
+| 32 | `facility_morning_n1_1.ogg` | Diagnostic cycle 1 complete. | Night 1 at 6 AM, morning line 1 |
+| 33 | `facility_morning_n1_2.ogg` | Monitoring infrastructure. Restored. | Night 1 at 6 AM, morning line 2 (and 3 more) |
+| 34 | `facility_morning_n1_4.ogg` | Operator status. Retained for cycle 2. | Night 1 at 6 AM, morning line 4 |
+| 35 | `facility_morning_n2_1.ogg` | Diagnostic cycle 2 complete. | Night 2 at 6 AM, morning line 1 |
+| 36 | `facility_morning_n2_4.ogg` | Operator status. Retained for cycle 3. | Night 2 at 6 AM, morning line 4 |
+| 37 | `facility_morning_n3_1.ogg` | Diagnostic cycle 3 complete. | Night 3 at 6 AM, morning line 1 |
+| 38 | `facility_morning_n3_4.ogg` | Operator status. Retained for cycle 4. | Night 3 at 6 AM, morning line 4 |
+| 39 | `facility_morning_n4_1.ogg` | Diagnostic cycle 4 complete. | Night 4 at 6 AM, morning line 1 |
+| 40 | `facility_morning_n4_4.ogg` | Operator status. Retained for cycle 5. | Night 4 at 6 AM, morning line 4 |
+| 41 | `facility_morning_n5_1.ogg` | Diagnostic series complete. | Night 5 at 6 AM, morning line 1 |
+| 42 | `facility_morning_n5_2.ogg` | Subjects accounted for. 5 of 5. | Night 5 at 6 AM, morning line 2 |
+| 43 | `facility_morning_n5_3.ogg` | Operator status. Contained. | Night 5 at 6 AM, morning line 3 |
+| 44 | `facility_morning_n5_4.ogg` | Thank you for your participation. | Night 5 at 6 AM, morning line 4 |
 

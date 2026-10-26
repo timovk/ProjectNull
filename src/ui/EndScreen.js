@@ -88,14 +88,14 @@ export class EndScreen {
     showScreen(this.node, true);
   }
 
-  showVictory(summary, { lines: victory = VICTORY_LINES, next = null, final = false } = {}) {
+  showVictory(summary, { lines: victory = VICTORY_LINES, next = null, final = false, deviation = false } = {}) {
     const run = this.run ?? { label: 'Night 1', again: 'PLAY NIGHT 1 AGAIN' };
     this.retryBtn.textContent = run.again;
     this.nightBtn.classList.toggle('hidden', !next);
     if (next) this.nightBtn.textContent = `CONTINUE TO NIGHT ${next}`;
     const lines = el('div', { class: 'terminal-lines' }, victory.map((t, i) => el('div', { text: `> ${t}`, style: { animationDelay: `${0.6 + i * 1.1}s` } })));
     this.body.replaceChildren(
-      el('h1', { class: 'end-title won', text: final ? 'THE LAST NIGHT IS OVER' : 'SHIFT COMPLETE' }),
+      el('h1', { class: 'end-title won', text: deviation ? 'SERIES RESTARTED' : final ? 'THE LAST NIGHT IS OVER' : 'SHIFT COMPLETE' }),
       el('div', { class: 'end-sub', text: `${run.label.toUpperCase()} / 6:00 AM` }),
       lines,
       el('div', { class: 'stats' }, statRows([
@@ -113,11 +113,13 @@ export class EndScreen {
         ['Movement opportunities simulated', summary.opportunities],
         ['Seed', summary.seed]
       ])),
-      final
-        ? el('div', { class: 'end-note', text: `You survived all ${NIGHT_COUNT} nights. The facility has stopped asking for a contractor. Somewhere below Level 2, a fifth door is standing open.` })
-        : next
-          ? el('div', { class: 'end-note', text: `Night ${next} is now unlocked. The subjects will be more active.` })
-          : ''
+      deviation
+        ? el('div', { class: 'end-note', text: 'You broke one rule on the last night, and WARDEN did not get its fifth subject. You are still yourself. Below Level 2, R. is waiting for you.' })
+        : final
+          ? el('div', { class: 'end-note', text: `You kept every rule for ${NIGHT_COUNT} nights. Subjects accounted for: 5 of 5. The chair at the desk will never be empty again. R. left you a way out on Night 5; it is still there if you look for it.` })
+          : next
+            ? el('div', { class: 'end-note', text: `Night ${next} is now unlocked. The subjects will be more active.` })
+            : ''
     );
     showScreen(this.node, true);
   }

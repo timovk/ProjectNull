@@ -1,15 +1,23 @@
-# PROJECT NULL: Lore Draft v1.1
+# PROJECT NULL: Lore Draft v1.2
 
-**Status:** working story bible. Nothing here is in the game yet, apart from the facts marked [canon].
+**Status:** working story bible. Nothing here is in the game yet, apart from the facts marked [canon]. Decisions made so far are listed in [section 22](#22-decisions).
 
 ## How to read this
 
 This is the full truth of the PROJECT NULL world, written plainly for the people making it. Players will learn it one game at a time, but it is **not a puzzle**. Every game answers its own central question clearly, in the world, by its ending. Players who read the documents get more depth; players who do not still understand what happened.
 
 - **[canon]** means the current game already says it. New lore must never contradict it.
+- **[decided]** means a choice that has been made for the series.
 - Everything else is the proposed story. It is written as fact so it can be judged as a whole.
 
-**What changed since v1.0**
+**What changed in v1.2**
+
+- The answers to the v1.1 questions are recorded in [section 22](#22-decisions) and applied throughout.
+- The deviation ending is decided: it is PROJECT NULL's second ending and the series canon. Its trigger is now one clear action instead of "any rule".
+- Subjects' former names stay out of PROJECT NULL. The Night 3 document now uses roles only.
+- LOG SIX is the next game, after PROJECT NULL is finished. SUBLEVEL B keeps its forced sacrifice.
+
+**What changed in v1.1**
 
 - Decisions instead of options: the Null has rules, Helix has a history, and every character has a name, a past and a fate.
 - New: the Rules of the Null, which tie every game mechanic to the story.
@@ -45,7 +53,7 @@ This is the full truth of the PROJECT NULL world, written plainly for the people
 19. [Future games](#19-future-games)
 20. [People](#20-people)
 21. [Glossary](#21-glossary)
-22. [Open questions](#22-open-questions)
+22. [Decisions](#22-decisions)
 
 ---
 
@@ -244,6 +252,8 @@ N-17 was built from 1984 to 1986 inside the old Kestrel Deep mine, replacing N-0
 
 All four were N-17 staff or residents. All four were changed between October 1997 and February 1998, as the first part of Project NULL's final series. Each was chosen for a strong, simple trait, which became the anchor.
 
+**[decided]** Their former names are revealed in later games only. In PROJECT NULL the subjects are known by number, nickname and, through the documents, their former role.
+
 ### Subject 01: The Wanderer
 
 - **Who he was:** **Tomas Brandt**, 51, N-17's senior night guard for twelve years. A kind man who never sat down on shift. He walked the corridors every hour "to make sure", because in 1986 he had once fallen asleep at a desk while a pump flooded.
@@ -426,7 +436,7 @@ R.'s tape note was right: "It isn't the fifth one. It isn't anyone." But R. was 
 
 ## 16. Endings
 
-### The contained ending [canon]
+### The contained ending [canon]: the default
 
 You complete five nights by the rules. Varga's seal reaches zero. "Subjects accounted for: 5 / 5. Operator status: contained. Thank you for your participation."
 
@@ -434,13 +444,15 @@ You complete five nights by the rules. Varga's seal reaches zero. "Subjects acco
 
 This is the default ending, and it is a tragedy that looks like a victory.
 
-### The deviation ending [proposal for PROJECT NULL]
+### The deviation ending [decided]: the second ending, and canon
 
-R.'s trick, found by reading the documents. On Night 5, survive, but break procedure once on purpose: for example, walk out of the station and touch the Sublevel B door between 5:00 and 5:59, then get back in time. WARDEN logs an operator deviation. At 6 AM: "Operator status: **retained**. Series restarted." R. comes on the radio, for the first time since Night 1: "You found it. Good. Now come down."
+R.'s trick, explained plainly in the Night 5 documents. On Night 5, between 5:00 and 5:59, leave the station, go through the maintenance corridor to the Sublevel B door and **hold `E` on it for a few seconds**, then get back and survive until 6 AM. It is the one thing procedure forbids most: the work order says to remain in or near the station. WARDEN logs an operator deviation. At 6 AM: "Operator status: **retained**. Series restarted." R. comes on the radio, for the first time since Night 1: "You found it. Good. Now come down."
 
 **What it means:** you survived and stayed yourself, but Varga's seal is gone and WARDEN will try again. This ending leads into the sequel.
 
-### Which is canon for the series?
+**How it plays.** The trip takes about 20 seconds there and back, while all four subjects are at their Night 5 peak and nobody is at the desk. Players choose when to go. The best moment is right after the Patient has been sent home and the Echo has left the vents.
+
+### Which is canon for the series? [decided]
 
 **The deviation ending.** Contractor-0417 goes down to Sublevel B. The contained ending is what happens to a player who never questions the rules, and the sequel can mention it as what WARDEN expected.
 
@@ -452,7 +464,7 @@ The rule for every game: **one central question, one clear answer, told in the w
 
 | Game | Central question | The answer, told plainly by the end |
 | --- | --- | --- |
-| **PROJECT NULL** (this game) | What is happening to me? | You are being made into Subject 05. The cell is the station. Winning completes it. |
+| **PROJECT NULL** (this game) | What is happening to me? | You are being made into Subject 05. The cell is the station. Winning by the rules completes it; breaking one rule on the last night keeps you yourself. |
 | **LOG SIX** (prequel) | Who was R., and how did she survive? | Ruth Calder found the deviation trick, and went down to find the woman who refused. |
 | **SUBLEVEL B** (sequel) | What is down there? | The Null, Varga, R., and the echo of the eleven. And a way to close the Deep without a fifth person. |
 | **N-09** (side story) | Is it only N-17? | No. Helix is running Project NULL at a second site, using the method proven at N-17. |
@@ -464,7 +476,7 @@ Depth is optional; understanding is not. Documents give names, dates and feeling
 
 ## 18. New lore for PROJECT NULL
 
-Concrete additions for the current game, in order of effort. All are drafts.
+**[decided]** The four documents, the two tapes and the deviation ending go into PROJECT NULL. The texts below are drafts.
 
 ### New documents, one per night
 
@@ -479,12 +491,14 @@ Concrete additions for the current game, in order of effort. All are drafts.
 **Night 3: Personnel list, N-17 Level 1** (form, found at the desk)
 
 > HELIX RESEARCH DIRECTORATE / N-17 STAFF ROSTER (REV. 11/97)
-> BRANDT, T. - Security (Night) - ~~REASSIGNED~~ **S-01**
-> OSEI, M. - Surveillance Analysis - ~~REASSIGNED~~ **S-02**
-> ARANDA, F. - Acoustics - ~~REASSIGNED~~ **S-03**
-> PELL, J. - Resident (Isolation) - ~~TRIAL~~ **S-04**
+> [NAME WITHHELD] - Security (Night) - ~~REASSIGNED~~ **S-01**
+> [NAME WITHHELD] - Surveillance Analysis - ~~REASSIGNED~~ **S-02**
+> [NAME WITHHELD] - Acoustics - ~~REASSIGNED~~ **S-03**
+> [NAME WITHHELD] - Resident (Isolation) - ~~TRIAL~~ **S-04**
 > VARGA, I. - Systems / Project Lead - **CANDIDATE**
 > ...ten more names, all marked 03/03/98: UNACCOUNTED
+
+Helix withheld the four names when the subjects were reassigned. The roles are enough for the player to understand that the subjects were staff.
 
 **Night 4: Project NULL memo** (memo)
 
@@ -495,7 +509,7 @@ Concrete additions for the current game, in order of effort. All are drafts.
 
 **Night 5: Work order 4471-N17, second copy** (form, on the desk at the start of Night 5)
 
-> The same work order as Night 1, with one more line at the bottom: CANDIDATE DESIGNATION: 05. And a handwritten note in R.'s writing in the margin: *"Break one rule before six. Any rule. WARDEN only wants perfect."*
+> The same work order as Night 1, with one more line at the bottom: CANDIDATE DESIGNATION: 05. And a handwritten note in R.'s writing in the margin: *"It only wants perfect. Don't give it perfect. After five, go to the B door and put your hand on it. Then get back to the desk and live till six."*
 
 ### More tapes
 
@@ -504,9 +518,9 @@ Concrete additions for the current game, in order of effort. All are drafts.
 
 ### Small touches
 
-- **Subject files** on the workstation, unlocked after surviving a night with that subject active: name, former role, anchor, one personal detail.
+- **Subject files** on the workstation, unlocked after surviving a night with that subject active: former role, anchor and one personal detail, without the name.
 - **CAM 13 in the contained ending:** the empty desk chair, on a feed labelled CELL 05.
-- **The deviation ending** from section 16.
+- **The deviation ending** from section 16. [decided]
 
 ---
 
@@ -515,6 +529,8 @@ Concrete additions for the current game, in order of effort. All are drafts.
 Every game keeps the series' promises: transparent rule-driven AI that players can learn, honest mechanics explained in the world, and no jumpscares.
 
 ### PROJECT NULL: LOG SIX (prequel)
+
+**[decided]** The next game, to be started once PROJECT NULL is finished.
 
 - **You play:** Ruth Calder, Contractor-0317, March 1998.
 - **Structure:** seven nights. Nights 1 to 3 are like PROJECT NULL, but with no guide, no radio and no How It Works. The whiteboard in the Research Hall is the player's notebook: the game fills it in as Ruth works out each rule.
@@ -528,7 +544,7 @@ Every game keeps the series' promises: transparent rule-driven AI that players c
 - **Setting:** the pump galleries, WARDEN's machine room, and the edge of the Deep.
 - **New mechanic: you roll too.** Below, you are drawing. Every action you take has your own pull: a chance to fail, shown openly on screen. You lower it with your own anchors: light (a lamp with limited oil), sound (a radio playing R.'s voice), and attention (keeping a written log). The game is about keeping yourself together while moving through a place where things are drawn.
 - **Story:** find R. and Varga in the machine room. Learn that the Count of Five can be satisfied *without* a person: Varga's plan is to make WARDEN itself the fifth anchor, a procedure with no one inside it. To do it, someone has to carry WARDEN's core down to the Deep and stay with it until it settles.
-- **Ending:** who stays. R., Varga, or you. Each is a clear, final choice, and the Deep closes either way.
+- **Ending [decided]:** the player **has to** choose who stays: R., Varga, or you. There is no way out without a sacrifice. Each choice is clear and final, and the Deep closes either way.
 
 ### PROJECT NULL: N-09 (side story)
 
@@ -595,12 +611,22 @@ Every game keeps the series' promises: transparent rule-driven AI that players c
 
 ---
 
-## 22. Open questions
+## 22. Decisions
 
-Most questions from v1.0 now have a proposed answer. These are still yours to decide:
+Answers to the v1.1 questions.
 
-1. **The deviation ending.** Should PROJECT NULL get it as a second ending, and should it be the series' canon? This draft says yes to both.
-2. **How much the current game says.** Should the four new documents and two tapes go in, or should PROJECT NULL stay lean and leave most of this for the prequel and sequel?
-3. **Names on screen.** The subjects' former names are powerful. Should they appear in the current game (on the personnel list), or only in later games?
-4. **The sequel's choice.** Is "who stays with the Deep" the right ending for SUBLEVEL B, or should the series end without a sacrifice?
-5. **Which game comes next?** LOG SIX reuses the most from this game. SUBLEVEL B is the bigger step and the bigger story.
+| # | Question | Decision |
+| --- | --- | --- |
+| 1 | Should PROJECT NULL get the deviation ending, and is it canon? | **Yes to both.** It is the second ending and the series canon. |
+| 2 | Do the four new documents and two tapes go into PROJECT NULL? | **Yes.** |
+| 3 | Do the subjects' former names appear in PROJECT NULL? | **No.** Only in later games. |
+| 4 | Does SUBLEVEL B end with a forced sacrifice? | **Yes.** The player has to choose who stays. |
+| 5 | Which game comes next? | **LOG SIX**, but only after PROJECT NULL is finished. |
+
+### Deviation ending details
+
+| # | Question | Decision |
+| --- | --- | --- |
+| 6 | Is holding `E` on the Sublevel B door between 5:00 and 5:59 on Night 5 the right trigger? | **Yes.** |
+| 7 | Is the deviation ending always possible? | **No.** Only after reading R.'s note on the Night 5 work order. |
+| 8 | Does the main menu change after the deviation ending? | **Yes**, a small change. |

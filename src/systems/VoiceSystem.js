@@ -4,12 +4,14 @@ import { VOICE_LINE_INDEX } from '../content/VoiceLines.js';
 export const SYNTH_PROFILES = {
   R: { rate: 0.95, pitch: 0.9, prefer: [/guy.*natural/i, /david/i, /mark/i, /george/i, /ryan/i, /uk english male/i, /daniel/i, /alex/i, /\bmale/i] },
   TAPE: { rate: 0.82, pitch: 0.8, prefer: [/guy.*natural/i, /david/i, /mark/i, /george/i, /ryan/i, /uk english male/i, /daniel/i, /alex/i, /\bmale/i] },
+  VARGA: { rate: 0.9, pitch: 1.0, prefer: [/susan/i, /aria.*natural/i, /jenny/i, /moira/i, /karen/i, /uk english female/i, /female/i] },
   FACILITY: { rate: 0.86, pitch: 0.7, prefer: [/zira/i, /hazel/i, /uk english female/i, /samantha/i, /karen/i, /moira/i, /female/i] }
 };
 
-const STALE_MS = { R: 60000, TAPE: 60000, FACILITY: 25000 };
+const STALE_MS = { R: 60000, TAPE: 60000, VARGA: 60000, FACILITY: 25000 };
 const RADIO_POS = { x: 4.1, y: 1.25, z: 2.0 };
 const TAPE_POS = { x: 4.5, y: 0.9, z: 11.5 };
+const CASSETTE_POS = { x: 2.2, y: 0.2, z: 15.6 }; // Varga's cassette, at the Sublevel B door
 
 /**
  * Spoken lines, one at a time, in order.
@@ -167,13 +169,15 @@ export class VoiceSystem {
     const tapeIn = ctx.createGain();
     const tapePan = a.panner(TAPE_POS);
     tapeIn.connect(f('highpass', 180)).connect(f('lowpass', 4200)).connect(tapePan).connect(this.bus);
+    const cassetteIn = ctx.createGain();
+    cassetteIn.connect(f('highpass', 220)).connect(f('lowpass', 3600)).connect(a.panner(CASSETTE_POS)).connect(this.bus);
     const hallIn = ctx.createGain();
     hallIn.connect(this.bus);
     const send = ctx.createGain();
     send.gain.value = 0.45;
     hallIn.connect(send);
     send.connect(a.reverb);
-    this.chains = { R: radioIn, TAPE: tapeIn, FACILITY: hallIn };
+    this.chains = { R: radioIn, TAPE: tapeIn, VARGA: cassetteIn, FACILITY: hallIn };
     this.applyVolume();
   }
 

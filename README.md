@@ -70,7 +70,9 @@ The main menu has a **How It Works** screen for anyone who wants the maths. It c
 
 ## The five nights
 
-Night progress is saved in the browser. Each night raises every subject's level hour by hour, and each adds a few terminal messages about cell 05. Night 5 ends differently.
+Night progress is saved in the browser. Each night raises every subject's level hour by hour, and each adds a few terminal messages about cell 05. From Night 2 on, new documents and audio logs appear in the station and the electrical room (`NIGHT_ITEMS` in `src/content/Documents.js`).
+
+Night 5 has **two endings**. The default one follows the rules to the end. The other, the canon ending, is explained by R.'s note on the Night 5 work order and lives in `src/content/Endings.js`. Reaching it changes the main menu. The full story is in [`docs/lore/LORE_DRAFT.md`](docs/lore/LORE_DRAFT.md) (spoilers).
 
 | Night | 12 AM levels (W/O/E/P) | 5 AM levels | Expert survives | Distracted survives |
 | --- | --- | --- | --- | --- |
@@ -310,7 +312,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 
 ## Tests and balance
 
-`npm test` runs 112 tests in about 12 seconds:
+`npm test` runs 117 tests in about 12 seconds:
 
 - **Probability.** Over 100,000 trials, AI 0 succeeds exactly 0% of the time and AI 20 exactly 100%. AI 10 converges to 50%, AI 5 to 25%, and every level 0–20 to AI/20. The d20 is uniform.
 - **Pipeline.** Successful rolls and successful moves are counted separately. Blocked and invalid outcomes are distinct.
@@ -322,6 +324,7 @@ Buttons pause the simulation or run it at 1x, 4x or 16x. You can filter out fail
 - **Campaign.** Each night is never easier than the one before, Night 1 stays gentle, and Night 5 stays winnable. Saved progress unlocks nights in order.
 - **Practice.** A practice breach is logged and sends the creature home without ending the night. A real night never uses that reset.
 - **Failure advice.** A breach records what the station was doing, and the end screen names the cause: the auxiliary cell's bang, the field, a moving door, the fan or radio, a power failure, a forced door, or the Patient arriving while the Echo listened.
+- **Story.** Later-night documents and tapes exist and keep the subjects anonymous; the second ending only counts on Night 5, after R.'s note, between 5 and 6 AM, once; progress remembers the note and the endings.
 - **Voices.** Every spoken line has a voice line id, ids are unique file names, terminal text becomes natural speech, the manifest matches recordings to lines and the recording script lists every line.
 
 Night 1 results from `npm run balance` over 200 seeds:

@@ -85,6 +85,7 @@ button {
   text-shadow: 0 0 18px rgba(180, 255, 210, 0.08);
 }
 .subtitle { color: var(--dim); letter-spacing: 0.24em; font-size: 12px; margin-bottom: 28px; }
+.menu-r-line { color: var(--accent); font-style: italic; font-size: 13px; margin: -18px 0 22px; }
 .advisory {
   border-left: 2px solid var(--accent);
   padding: 8px 14px;

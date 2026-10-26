@@ -60,6 +60,7 @@ export class InteractionSystem {
     const hits = this.raycaster.intersectObjects(this.targets, false);
     let target = null;
     for (const h of hits) {
+      if (h.object.userData.disabled) continue; // an item that is not there tonight
       if (h.object.userData.interactId) {
         target = h.object.userData;
         break;

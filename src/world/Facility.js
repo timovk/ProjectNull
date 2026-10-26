@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Kit } from '../render/Materials.js';
 import * as TX from '../render/Textures.js';
+import { NIGHT_ITEMS } from '../content/Documents.js';
 import { SecurityDoor } from './Doors.js';
 import { buildRemoteRooms } from './RoomBuilder.js';
 
@@ -29,6 +30,7 @@ export class Facility {
     this.lights = {};
     this.rooms = {}; // camera-room descriptors (approaches + remote rooms)
     this.docs = [];
+    this.nightItems = [];
     this.build();
   }
 
@@ -167,6 +169,9 @@ export class Facility {
     // Shift assignment on the desk + a note taped to the monitor.
     this.addDocument(parent, 'shift_assignment', -0.72, 0.812, -2.58, { ry: -0.15 });
     this.addDocument(parent, 'note_monitor', 0.95, 1.85, -3.33, { upright: true, small: true });
+    // Later nights: the staff roster and the second work order.
+    this.addDocument(parent, 'staff_roster', -1.75, 0.812, -2.55, { ry: 0.2 });
+    this.addDocument(parent, 'work_order_05', 1.65, 0.814, -2.55, { ry: -0.2 });
   }
 
   addDocument(parent, docId, x, y, z, { rx = 0, ry = 0, upright = false, small = false } = {}) {
@@ -178,10 +183,26 @@ export class Facility {
     mesh.rotation.y = ry;
     if (upright) mesh.rotation.x = rx;
     parent.add(mesh);
-    if (upright) this.hit('DOCUMENT', x, y, z, Math.max(w, 0.25), Math.max(h, 0.25), 0.25, { docId });
-    else this.hit('DOCUMENT', x, y + 0.04, z, Math.max(w, 0.25), 0.18, Math.max(h, 0.25), { docId });
-    this.docs.push({ docId, mesh });
+    const hit = upright
+      ? this.hit('DOCUMENT', x, y, z, Math.max(w, 0.25), Math.max(h, 0.25), 0.25, { docId })
+      : this.hit('DOCUMENT', x, y + 0.04, z, Math.max(w, 0.25), 0.18, Math.max(h, 0.25), { docId });
+    this.docs.push({ docId, mesh, hit });
+    if (docId in NIGHT_ITEMS) this.nightItem(docId, [mesh], [hit]);
     return mesh;
+  }
+
+  /** Registers objects that only exist from a given campaign night on (NIGHT_ITEMS). */
+  nightItem(id, objects, hits) {
+    this.nightItems.push({ id, from: NIGHT_ITEMS[id], objects, hits });
+  }
+
+  /** Shows the documents and tapes for this campaign night; 0 hides them all. */
+  setNightItems(night) {
+    for (const item of this.nightItems) {
+      const on = night >= item.from;
+      for (const o of item.objects) o.visible = on;
+      for (const h of item.hits) h.userData.disabled = !on;
+    }
   }
 
   buildStationProps(parent) {
@@ -373,6 +394,7 @@ export class Facility {
     kit.box(parent, 0.55, 1.9, 0.6, m.metal, -4.05, 0.95, 1.6, { cast: true, collide: true });
     kit.cyl(parent, 0.17, 0.14, 0.38, m.metalDark, -3.5, 0.19, -1.9, { collide: true });
     this.addDocument(parent, 'memo_observer', -4.05, 1.31, 2.55, { ry: 0.4 });
+    this.addDocument(parent, 'vell_memo', -3.76, 1.45, 1.6, { upright: true, ry: Math.PI / 2 });
   }
 
   buildStationLights(parent) {
@@ -615,8 +637,20 @@ export class Facility {
     kit.cyl(g, 0.04, 0.04, 0.02, m.metalDark, 4.45, 0.9, 11.5, { segments: 10 });
     kit.cyl(g, 0.04, 0.04, 0.02, m.metalDark, 4.56, 0.9, 11.5, { segments: 10 });
     this.refs.recorder = recorder;
-    this.hit('TAPE', 4.5, 0.9, 11.5, 0.35, 0.2, 0.3);
+    this.hit('TAPE', 4.5, 0.9, 11.5, 0.35, 0.2, 0.3, { tapeId: 'log_six' });
     this.addDocument(g, 'barrier_notice', 7.0, 1.6, 6.66, { upright: true });
+    // Later nights: R.'s whiteboard photo, and the pump-telemetry reel recorder
+    // wired to Sublevel B, which picks up R.'s "Log nine".
+    this.addDocument(g, 'r_whiteboard', 4.25, 1.6, 11.94, { upright: true, ry: Math.PI });
+    const telemetry = new THREE.Group();
+    telemetry.position.set(7.7, 0, 11.6);
+    g.add(telemetry);
+    kit.box(telemetry, 0.5, 0.9, 0.4, m.metalPaint, 0, 0.45, 0, { cast: true, collide: true });
+    kit.box(telemetry, 0.44, 0.24, 0.3, m.plastic, 0, 1.02, 0, { tile: false });
+    kit.cyl(telemetry, 0.09, 0.09, 0.02, m.metalDark, -0.11, 1.15, 0, { segments: 16 });
+    kit.cyl(telemetry, 0.09, 0.09, 0.02, m.metalDark, 0.11, 1.15, 0, { segments: 16 });
+    kit.box(telemetry, 0.05, 0.03, 0.02, m.ledAmber, 0.17, 1.02, 0.155, { tile: false });
+    this.nightItem('log_nine', [telemetry], [this.hit('TAPE', 7.7, 1.05, 11.6, 0.55, 0.4, 0.45, { tapeId: 'log_nine' })]);
     // Light.
     const lamp = new THREE.PointLight(0xd0c8a8, 16, 12, 2);
     lamp.position.set(5.9, 2.55, 9.3);
@@ -672,6 +706,9 @@ export class Facility {
     this.lights.restricted = { red, glow };
     this.hit('RESTRICTED', 2.5, 1.2, 15.8, 1.0, 1.8, 0.4);
     this.addDocument(g, 'sublevel_note', 2.0, 1.25, 15.9, { upright: true, small: true, ry: Math.PI });
+    // Night 5: Varga's cassette, pushed under the door from below.
+    const cassette = kit.box(g, 0.1, 0.018, 0.065, m.plastic, 2.2, 0.01, 15.55, { tile: false, ry: 0.5 });
+    this.nightItem('cycle_four', [cassette], [this.hit('TAPE', 2.2, 0.12, 15.45, 0.35, 0.24, 0.35, { tapeId: 'cycle_four' })]);
   }
 }
 

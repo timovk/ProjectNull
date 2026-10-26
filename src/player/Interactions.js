@@ -1,4 +1,5 @@
-import { DOCUMENTS } from '../content/Documents.js';
+import { DOCUMENTS, TAPES } from '../content/Documents.js';
+import { DEVIATION_HOLD_SECONDS } from '../content/Endings.js';
 import { POWER_CONFIG } from '../config/GameConfig.js';
 
 const sideName = (side) => side.toLowerCase();
@@ -171,8 +172,8 @@ export function createInteractionHandlers(game) {
       press: (d, g) => g.openDocument(d.docId)
     },
     TAPE: {
-      prompt: (_d, g) => (g.tapePlaying ? 'Tape recorder: playing' : '[E] Play audio log'),
-      press: (_d, g) => g.playTape()
+      prompt: (d, g) => (g.tapePlaying ? 'Playing...' : TAPES[d.tapeId ?? 'log_six'].prompt),
+      press: (d, g) => g.playTape(d.tapeId ?? 'log_six')
     },
     ELECTRICAL_DOOR: {
       prompt: (_d, g) => `[E] ${g.facility.refs.electricalDoor.target > 0.5 ? 'Close' : 'Open'} door`,
@@ -183,7 +184,13 @@ export function createInteractionHandlers(game) {
       }
     },
     RESTRICTED: {
-      prompt: () => 'SUBLEVEL B - ACCESS REVOKED'
+      // The deviation ending: on the last night, after R.'s note, hold a hand on the door.
+      hold: DEVIATION_HOLD_SECONDS,
+      canHold: (_d, g) => g.canDeviate(),
+      prompt: (_d, g) => (g.canDeviate() ? '[Hold E] Put your hand on the door' : 'SUBLEVEL B - ACCESS REVOKED'),
+      holdStart: () => working(true),
+      holdEnd: () => working(false),
+      complete: (_d, g) => g.logDeviation()
     }
   };
 }

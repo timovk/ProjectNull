@@ -19,7 +19,8 @@ import { AudioSystem } from '../systems/AudioSystem.js';
 import { EntitySoundscape } from '../systems/EntitySoundscape.js';
 import { CameraSpeaker } from '../systems/CameraSpeaker.js';
 import { VoiceSystem } from '../systems/VoiceSystem.js';
-import { radioLineId, tapeLineId, gateLineId, morningLineId } from '../content/VoiceLines.js';
+import { radioLineId, tapeLineId, gateLineId, morningLineId, deviationLineId, DEVIATION_LOGGED_ID, DEVIATION_RADIO_ID } from '../content/VoiceLines.js';
+import { DEVIATION_NOTE_DOC, DEVIATION_LOGGED, DEVIATION_LINES, DEVIATION_RADIO, deviationAvailable } from '../content/Endings.js';
 import { HUD } from '../ui/HUD.js';
 import { Subtitles, HintsUI } from '../ui/Subtitles.js';
 import { DocumentViewer } from '../ui/DocumentViewer.js';
@@ -36,12 +37,13 @@ import { el, showScreen } from '../ui/dom.js';
 import { HINTS } from '../content/Hints.js';
 import { GATE_MESSAGES, victoryLines } from '../content/TerminalMessages.js';
 import { Progress } from './Progress.js';
-import { TAPE_TRANSCRIPT } from '../content/Documents.js';
+import { TAPES } from '../content/Documents.js';
 import { ROOMS } from '../config/FacilityLayout.js';
 import { ENTITY_IDS, PRACTICE_SCHEDULE, NIGHT_SCHEDULES, NIGHT_COUNT } from '../config/GameConfig.js';
 
 const FAILURE_SECONDS = 10;
 const VICTORY_SECONDS = 9;
+const DEVIATION_VICTORY_SECONDS = 12;
 const SEAT_POS = new THREE.Vector3(0, 1.3, -2.2);
 const SEAT_TARGET = new THREE.Vector3(0, 1.27, -3.1);
 
@@ -355,6 +357,8 @@ export class Game {
       : { label: `Night ${this.night}`, retry: `RETRY NIGHT ${this.night}`, again: `PLAY NIGHT ${this.night} AGAIN` });
     this.feedDip = 0;
     this.debugger.resetLog();
+    this.facility.setNightItems(mode === 'NIGHT' ? this.night : 0);
+    this.facility.lights.restricted?.glow.color.setHex(0xff3020);
     this.messages = [];
     this.failure = null;
     this.victory = null;
@@ -534,6 +538,7 @@ export class Game {
 
   openDocument(docId) {
     if (this.docs.show(docId)) {
+      if (docId === DEVIATION_NOTE_DOC && this.mode === 'NIGHT') this.progress.markDeviationNoteRead();
       this.interaction.cancelHold();
       this.expectUnlock = true;
       this.player.releaseLock();
@@ -547,8 +552,30 @@ export class Game {
     if (this.state === STATES.PLAYING) this.player.requestLock();
   }
 
-  playTape() {
+  /** Whether a hand on the Sublevel B door counts as the deviation right now. */
+  canDeviate() {
+    return this.state === STATES.PLAYING && deviationAvailable({
+      mode: this.mode,
+      night: this.night,
+      noteRead: this.progress.deviationNoteRead,
+      hours: this.sim.gameHours,
+      done: !!this.sim.deviation
+    });
+  }
+
+  logDeviation() {
+    if (!this.canDeviate()) return;
+    const r = this.sim.command({ type: 'DEVIATION' });
+    if (!r.ok) return;
+    this.facility.lights.restricted?.glow.color.setHex(0xffa040);
+    this.pushMessage(DEVIATION_LOGGED, 'facility', true);
+    this.speakFacility(DEVIATION_LOGGED_ID, DEVIATION_LOGGED);
+    this.subtitles.show('[The door is ice cold. The lamp above it turns amber.]', 'ambient', 6);
+  }
+
+  playTape(tapeId = 'log_six') {
     if (this.tapePlaying) return;
+    const transcript = TAPES[tapeId].lines;
     this.tapePlaying = true;
     this.audio.tape(true);
     const startedAt = performance.now();
@@ -557,15 +584,15 @@ export class Game {
       if (!this.tapePlaying) return;
       if (this.state === STATES.PAUSED) return void setTimeout(tick, 200);
       const t = (performance.now() - startedAt) / 1000;
-      for (const line of TAPE_TRANSCRIPT) {
+      for (const line of transcript) {
         if (t >= line.at && !shown.has(line.at)) {
           shown.add(line.at);
           this.subtitles.show(line.text, 'tape', 5.5);
-          this.voice.say(tapeLineId(TAPE_TRANSCRIPT.indexOf(line)));
+          this.voice.say(tapeLineId(transcript.indexOf(line), tapeId));
           if (!this.settings.get('subtitles')) this.hints.push(line.text, 'AUDIO LOG');
         }
       }
-      if (t > TAPE_TRANSCRIPT[TAPE_TRANSCRIPT.length - 1].at + 1) {
+      if (t > transcript[transcript.length - 1].at + 1) {
         this.tapePlaying = false;
         this.audio.tape(false);
         return;
@@ -641,18 +668,28 @@ export class Game {
   updateVictory(dt) {
     const v = this.victory;
     v.t += dt;
-    const lines = victoryLines(this.mode === 'NIGHT' ? this.night : 1);
+    // The deviation ending: WARDEN reports the deviation instead of "contained", then R. speaks.
+    const deviation = this.mode === 'NIGHT' && !!this.sim.deviation;
+    const lines = deviation ? DEVIATION_LINES : victoryLines(this.mode === 'NIGHT' ? this.night : 1);
+    const duration = deviation ? DEVIATION_VICTORY_SECONDS : VICTORY_SECONDS;
     while (v.lines < lines.length && v.t > 0.8 + v.lines * 1.2) {
       this.pushMessage(lines[v.lines], 'facility', v.lines === 0);
-      this.voice.say(morningLineId(this.mode === 'NIGHT' ? this.night : 1, v.lines));
+      this.voice.say(deviation ? deviationLineId(v.lines) : morningLineId(this.mode === 'NIGHT' ? this.night : 1, v.lines));
       v.lines++;
     }
-    if (v.t > VICTORY_SECONDS - 2.6 && !v.fading) {
+    if (deviation && !v.radio && v.t > 0.8 + lines.length * 1.2 + 0.8) {
+      v.radio = true;
+      this.audio.radioChirp();
+      this.pushMessage(`R: ${DEVIATION_RADIO}`, 'radio');
+      this.subtitles.show(`R: ${DEVIATION_RADIO}`, 'radio', 5);
+      this.voice.say(DEVIATION_RADIO_ID);
+    }
+    if (v.t > duration - 2.6 && !v.fading) {
       v.fading = true;
       this.setFade(1);
       this.audio.setFade(0.3, 2.4);
     }
-    if (v.t >= VICTORY_SECONDS) {
+    if (v.t >= duration) {
       this.fsm.set(STATES.ENDED);
       this.hud.setVisible(false);
       this.expectUnlock = true;
@@ -664,8 +701,10 @@ export class Game {
         this.coach.stop();
       } else if (this.mode === 'NIGHT') {
         const next = this.progress.complete(this.night);
+        const final = this.night >= NIGHT_COUNT;
+        if (final) this.progress.recordEnding(deviation ? 'deviation' : 'contained');
         this.endNext = next;
-        this.endScreen.showVictory(this.sim.getSummary(), { lines: victoryLines(this.night), next, final: this.night >= NIGHT_COUNT });
+        this.endScreen.showVictory(this.sim.getSummary(), { lines, next, final, deviation });
       } else this.endScreen.showVictory(this.sim.getSummary());
     }
   }

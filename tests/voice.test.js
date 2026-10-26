@@ -2,10 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   VOICE_LINES, VOICE_LINE_INDEX, SPEAKERS, speakable,
-  radioLineId, tapeLineId, terminalLineId, gateLineId, morningLineId
+  radioLineId, tapeLineId, terminalLineId, gateLineId, morningLineId,
+  deviationLineId, DEVIATION_LOGGED_ID, DEVIATION_RADIO_ID
 } from '../src/content/VoiceLines.js';
+import { DEVIATION_LINES } from '../src/content/Endings.js';
 import { RADIO_BRIEFING } from '../src/content/RadioBriefing.js';
-import { TAPE_TRANSCRIPT } from '../src/content/Documents.js';
+import { TAPES } from '../src/content/Documents.js';
 import { terminalSchedule, GATE_MESSAGES, victoryLines } from '../src/content/TerminalMessages.js';
 import { NIGHT_COUNT } from '../src/config/GameConfig.js';
 import { buildManifest } from '../scripts/voiceManifest.js';
@@ -14,9 +16,13 @@ import { renderVoiceScript } from '../scripts/voiceScript.js';
 test('every line the game speaks resolves to a recordable voice line', () => {
   const ids = [];
   RADIO_BRIEFING.forEach((_, i) => ids.push(radioLineId(i)));
-  TAPE_TRANSCRIPT.forEach((m, i) => {
-    if (m.text.includes('"')) ids.push(tapeLineId(i));
-  });
+  for (const [tapeId, tape] of Object.entries(TAPES)) {
+    tape.lines.forEach((m, i) => {
+      if (m.text.includes('"')) ids.push(tapeLineId(i, tapeId));
+    });
+  }
+  ids.push(DEVIATION_LOGGED_ID, DEVIATION_RADIO_ID);
+  DEVIATION_LINES.forEach((_, i) => ids.push(deviationLineId(i)));
   for (let n = 1; n <= NIGHT_COUNT; n++) {
     for (const m of terminalSchedule(n)) ids.push(terminalLineId(n, m.id));
     victoryLines(n).forEach((_, i) => ids.push(morningLineId(n, i)));
@@ -24,7 +30,8 @@ test('every line the game speaks resolves to a recordable voice line', () => {
   for (const gate of Object.keys(GATE_MESSAGES)) ids.push(gateLineId(gate));
   for (const id of ids) assert.ok(VOICE_LINE_INDEX.has(id), `missing voice line ${id}`);
   assert.equal(VOICE_LINE_INDEX.size, ids.length);
-  assert.equal(VOICE_LINE_INDEX.has(tapeLineId(TAPE_TRANSCRIPT.length - 1)), false, 'stage directions are not spoken');
+  assert.equal(VOICE_LINE_INDEX.has(tapeLineId(TAPES.log_six.lines.length - 1)), false, 'stage directions are not spoken');
+  assert.equal(VOICE_LINE_INDEX.get(tapeLineId(0, 'cycle_four')).speaker, 'VARGA');
 });
 
 test('canonical voice lines are unique, non-empty and have a known speaker', () => {

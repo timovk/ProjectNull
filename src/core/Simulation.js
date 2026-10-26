@@ -47,6 +47,7 @@ export class Simulation {
     this.breach = null;
     this.player = { walking: false, working: false, zone: 'STATION' };
     this.auxCellUsed = false;
+    this.deviation = null;
     this.commandHistory = [];
     this.stats = {
       encounters: 0,
@@ -179,6 +180,8 @@ export class Simulation {
         return sv.relayReset();
       case 'AUX_CELL':
         return this.useAuxCell();
+      case 'DEVIATION':
+        return this.logDeviation();
       case 'PLAYER':
         if ('walking' in cmd) this.player.walking = !!cmd.walking;
         if ('working' in cmd) this.player.working = !!cmd.working;
@@ -187,6 +190,19 @@ export class Simulation {
       default:
         return { ok: false, reason: 'UNKNOWN_COMMAND' };
     }
+  }
+
+  /**
+   * Story event, not a system: the operator touched the Sublevel B door after
+   * 5 AM on the last night. Recorded so replays and the summary know about it.
+   */
+  logDeviation() {
+    if (this.deviation) return { ok: false, reason: 'ALREADY_LOGGED' };
+    if (this.gameHours < 5) return { ok: false, reason: 'TOO_EARLY' };
+    this.deviation = { time: this.time, gameHours: this.gameHours };
+    this.recordSystem('DEVIATION', 'Operator deviation logged at the Sublevel B access point', {});
+    this.bus.emit('story:deviation', this.deviation);
+    return { ok: true };
   }
 
   useAuxCell() {
@@ -323,6 +339,7 @@ export class Simulation {
       practice: this.practice,
       practiceBreaches: this.stats.practiceBreaches,
       barrierRepels: this.stats.barrierRepels,
+      deviation: this.deviation,
       lightDeterrals: this.stats.lightDeterrals,
       doorsForced: this.stats.doorsForced,
       doorCloses: s.doorCloses,

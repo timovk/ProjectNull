@@ -368,7 +368,7 @@ src/
   systems/                Power, Security, Surveillance, Noise, FacilityEvents, NightProgression,
                           AudioSystem, EntitySoundscape, CameraSpeaker, VoiceSystem
   world/                  Facility, RoomBuilder, Doors, Lighting, StationPresenter,
-                          EntityModels, EntityPresenter, Environment
+                          StationDressing, EntityModels, EntityPresenter, Environment
   render/                 Textures, Materials, PostFX, CameraFeedRenderer
   player/                 PlayerController, InteractionSystem, Interactions
   ui/                     MainMenu, HowItWorks, CustomNight, SettingsMenu, PauseMenu, HUD, SurveillanceUI, FacilityMap,

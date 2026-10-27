@@ -4,6 +4,7 @@ import * as TX from '../render/Textures.js';
 import { NIGHT_ITEMS } from '../content/Documents.js';
 import { SecurityDoor } from './Doors.js';
 import { buildRemoteRooms } from './RoomBuilder.js';
+import { dressStation } from './StationDressing.js';
 
 /**
  * Builds the playable environment (main scene) and the remote rooms that are
@@ -116,11 +117,9 @@ export class Facility {
 
   buildDesk(parent) {
     const { kit, m } = this;
-    // Desk.
-    kit.box(parent, 4.2, 0.06, 0.95, m.metalDark, 0, 0.78, -2.88, { cast: true, collide: true });
-    kit.box(parent, 0.6, 0.75, 0.85, m.metal, -1.75, 0.375, -2.9, { cast: true });
-    kit.box(parent, 0.6, 0.75, 0.85, m.metal, 1.75, 0.375, -2.9, { cast: true });
-    kit.box(parent, 2.9, 0.5, 0.04, m.metalDark, 0, 0.5, -3.3);
+    // Desk, chair and everything on and around them: see StationDressing.js.
+    this.refs.chair = dressStation(parent, kit, m);
+    kit.addCollider(-2.1, 2.1, -3.355, -2.405);
     // Main surveillance monitor (feed texture is assigned at runtime).
     const mon = new THREE.Group();
     mon.position.set(0, 1.27, -3.08);
@@ -145,21 +144,8 @@ export class Facility {
       g.add(screen);
       this.refs[key] = screen;
     }
-    // Keyboard, mouse, mug, papers.
-    kit.box(parent, 0.55, 0.03, 0.18, m.plastic, 0, 0.825, -2.62, { tile: false });
-    kit.box(parent, 0.07, 0.03, 0.11, m.plastic, 0.42, 0.825, -2.62, { tile: false });
-    kit.cyl(parent, 0.045, 0.04, 0.1, m.plasticLight, -0.55, 0.86, -2.55);
     kit.box(parent, 0.3, 0.005, 0.38, m.paper, 0.95, 0.813, -2.62, { tile: false, ry: 0.2 });
-    // The chair.
-    const chair = new THREE.Group();
-    chair.position.set(0.1, 0, -1.95);
-    chair.rotation.y = 0.25;
-    parent.add(chair);
-    kit.box(chair, 0.5, 0.08, 0.5, m.fabric, 0, 0.48, 0, { tile: false, cast: true });
-    kit.box(chair, 0.48, 0.6, 0.07, m.fabric, 0, 0.82, 0.24, { tile: false, cast: true });
-    kit.cyl(chair, 0.03, 0.03, 0.42, m.metalDark, 0, 0.24, 0);
-    kit.cyl(chair, 0.3, 0.3, 0.04, m.metalDark, 0, 0.04, 0);
-    kit.addCollider(-0.2, 0.4, -2.25, -1.65);
+    kit.addCollider(-0.2, 0.4, -2.25, -1.65); // the chair
 
     // Interaction hitboxes for the desk.
     this.hit('WORKSTATION', 0, 1.25, -2.95, 1.1, 0.8, 0.5);

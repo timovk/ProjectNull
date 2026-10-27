@@ -128,8 +128,11 @@ The atmosphere carries real information:
 - **Dread drone.** A very low, slowly beating, slightly dissonant tone swells as the nearest creature gets closer, and is silent while everything is more than about three rooms away. It also rises slightly through the night. Changes take 4 to 6 seconds, so it is never sudden.
 - **The station holds its breath.** While an awake creature waits right outside, at a door or in the duct, the station's hum, ventilation, machinery and room tone dip to about 40%. A subtitle marks the moment for players without sound.
 - **Camera speaker.** The workstation has a small speaker that plays the room you are watching: its own air and machinery, and anything in it. You hear the Wanderer's shuffling, the Patient's breathing and the Echo's murmuring through the feed, and footsteps when something walks into or out of view. The Observer makes almost no sound. A dead feed is static. From across the station the speaker is faintly audible.
+- **Walls and doors.** Sounds from beyond the station come through its walls: a closed door takes the highs off what is behind it, an open one barely does, so an open door sounds open. The cut dulls a sound without hiding it; every cue stays within about 2.5 dB of its unoccluded level. The office has a short, tight reverb; the corridors and halls beyond it a long, dark one (`src/systems/Acoustics.js`).
 
-`tests/ambience.test.js` checks when the station hushes, how the drone scales, and what the speaker can hear.
+Purely cosmetic: footsteps vary from step to step (the player's grittier on the maintenance side), the fan spins up and runs down, the door motor sounds different opening and closing, and flickering tubes tick while the worn one buzzes. The tube sounds follow the light, so *disable flickering lights* and no-startle mode silence them too.
+
+`tests/ambience.test.js` checks when the station hushes, how the drone scales, and what the speaker can hear. `tests/acoustics.test.js` checks the zones, the door rule and the limits on occlusion.
 
 ## Voices
 
@@ -366,7 +369,7 @@ src/
   ai/                     Entity, MovementOpportunity, MovementGraph, BehaviorModifiers, AIManager
   ai/entities/            Wanderer, Observer, Echo, Patient
   systems/                Power, Security, Surveillance, Noise, FacilityEvents, NightProgression,
-                          AudioSystem, EntitySoundscape, CameraSpeaker, VoiceSystem
+                          AudioSystem, Acoustics, EntitySoundscape, CameraSpeaker, VoiceSystem
   world/                  Facility, RoomBuilder, Doors, Lighting, StationPresenter,
                           StationDressing, StationAtmosphere, EntityModels, EntityPresenter, Environment
   render/                 Textures, Materials, PostFX, CameraFeedRenderer

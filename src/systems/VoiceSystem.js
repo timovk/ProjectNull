@@ -176,7 +176,7 @@ export class VoiceSystem {
     const send = ctx.createGain();
     send.gain.value = 0.45;
     hallIn.connect(send);
-    send.connect(a.reverb);
+    send.connect(a.reverbs.hall);
     this.chains = { R: radioIn, TAPE: tapeIn, VARGA: cassetteIn, FACILITY: hallIn };
     this.applyVolume();
   }

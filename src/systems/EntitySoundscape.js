@@ -159,15 +159,15 @@ export class EntitySoundscape {
     }
   }
 
-  onDoor({ id }) {
+  onDoor({ id, closed }) {
     const sim = this.game.sim;
     const pos = id === 'WEST_DOOR' ? { x: -4.5, y: 1.2, z: -0.5 } : { x: 4.5, y: 1.2, z: -0.5 };
-    this.audio.doorMotor(pos);
+    this.audio.doorMotor(pos, 1, 0, 'ambient', closed);
     // The Echo repeats what it hears.
     const echo = sim.ai.get(ECHO);
     if (echo.currentRoom === 'VENT_DUCT' || echo.currentRoom === 'VENT_SHAFT') {
       const vpos = SOUND_POSITIONS[echo.currentRoom];
-      this.audio.doorMotor(vpos, echo.currentRoom === 'VENT_DUCT' ? 0.45 : 0.25, 1.4, 'entity');
+      this.audio.doorMotor(vpos, echo.currentRoom === 'VENT_DUCT' ? 0.45 : 0.25, 1.4, 'entity', closed);
       this.cue('[The door sound repeats, distorted, from the vents]');
     }
   }

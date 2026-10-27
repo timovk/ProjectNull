@@ -793,8 +793,8 @@ export class Game {
       this.audio.updateListener(listenerCam);
       const threat = playing ? this.soundscape.update(dt) : 0;
       const ambience = playing || this.state === STATES.FAILING
-        ? { hush: playing && this.soundscape.hush, dread: this.soundscape.dread }
-        : { hush: false, dread: 0 };
+        ? { hush: playing && this.soundscape.hush, dread: this.soundscape.dread, tubes: this.lighting.tubeSound }
+        : { hush: false, dread: 0, tubes: this.lighting.tubeSound };
       this.audio.updateLayers(sim, dt, threat, ambience);
       this.cameraSpeaker.update(sim, dt, { open: this.workstationOpen, active: playing || this.state === STATES.PAUSED });
     }

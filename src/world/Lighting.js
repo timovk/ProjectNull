@@ -123,6 +123,9 @@ export class LightingController {
     const worn = this.wornTubeValue(time);
     const glowA = tube * fa * failDim;
     const glowB = tube * fb * failDim;
+    // What the audio hears of the tubes: flicker only while they are lit.
+    const tubesLit = tube * failDim > 0.2;
+    this.tubeSound = tubesLit ? { a: fa, b: fb, worn } : { a: 1, b: 1, worn: 1 };
     L.main.intensity = mainI * fa * failDim;
     L.fill.intensity = fillI * fb * (0.82 + 0.18 * worn) * failDim;
     L.emergency.intensity = emergency * (1 - failure * 0.8);

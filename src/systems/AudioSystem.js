@@ -9,7 +9,13 @@
  *
  * Buses: ambient, entity, interface (each with its own volume setting), all
  * feeding the master bus.
+ *
+ * Positional one-shots pass through the walls and doors between them and the
+ * listener (Acoustics.js) and excite the reverb of the space they are in: the
+ * small office, or the concrete corridors and halls beyond it.
  */
+import { reverbSpace, soundPath, zoneOf } from './Acoustics.js';
+
 const MAX_MASTER = 0.8;
 
 export class AudioSystem {
@@ -62,12 +68,24 @@ export class AudioSystem {
       g.connect(this.master);
       this.buses[name] = g;
     }
-    this.reverb = ctx.createConvolver();
-    this.reverb.buffer = this.makeImpulse(2.4, 2.2);
-    this.reverbGain = ctx.createGain();
-    this.reverbGain.gain.value = 0.35;
-    this.reverb.connect(this.reverbGain);
-    this.reverbGain.connect(this.buses.entity);
+    // Two acoustic spaces: the office (short and dense, with early reflections
+    // off the near walls) and everything beyond it (a long, dark tail).
+    this.reverbs = {};
+    const spaces = [
+      ['room', { seconds: 0.9, decay: 3.4, predelay: 0.004, damp: 0.35, early: 7 }, 0.32],
+      ['hall', { seconds: 3.4, decay: 2.1, predelay: 0.025, damp: 0.12 }, 0.42]
+    ];
+    for (const [name, spec, level] of spaces) {
+      const conv = ctx.createConvolver();
+      conv.buffer = this.makeImpulse(spec);
+      const ret = ctx.createGain();
+      ret.gain.value = level;
+      conv.connect(ret);
+      ret.connect(this.buses.entity);
+      this.reverbs[name] = conv;
+    }
+    this.listenerPos = { x: 0, y: 1.6, z: 0.6 };
+    this.doors = { westOpen: true, eastOpen: true };
 
     this.noise = {
       white: this.makeNoise('white'),
@@ -113,13 +131,29 @@ export class AudioSystem {
     return buf;
   }
 
-  makeImpulse(seconds, decay) {
+  /**
+   * Stereo impulse response: decaying noise whose highs die faster than its
+   * lows (a one-pole lowpass closing to `damp` over the tail), after a short
+   * pre-delay and optional early reflections off near walls.
+   */
+  makeImpulse({ seconds, decay, predelay = 0, damp = 0.2, early = 0 }) {
     const ctx = this.ctx;
-    const len = Math.floor(ctx.sampleRate * seconds);
-    const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    const sr = ctx.sampleRate;
+    const len = Math.floor(sr * seconds);
+    const pre = Math.floor(sr * predelay);
+    const buf = ctx.createBuffer(2, len, sr);
     for (let c = 0; c < 2; c++) {
       const d = buf.getChannelData(c);
-      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      let lp = 0;
+      for (let i = pre; i < len; i++) {
+        const k = (i - pre) / (len - pre);
+        lp += (1 - (1 - damp) * k) * (Math.random() * 2 - 1 - lp);
+        d[i] = lp * Math.pow(1 - k, decay);
+      }
+      for (let r = 0; r < early; r++) {
+        const at = pre + Math.floor(sr * (0.004 + Math.random() * 0.03));
+        d[at] += (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 0.4) * (1 - r / (early + 1));
+      }
     }
     return buf;
   }
@@ -199,10 +233,20 @@ export class AudioSystem {
     lfoGain.connect(L.machinery.gain);
     lfo.start();
 
-    // Ventilation (positional at the fan).
+    // Ventilation (positional at the fan): moving air, the blade rate as a
+    // slight flutter, and a low motor rumble. It spins up and down rather
+    // than switching (updateLayers).
     L.vent = gain(0);
     L.ventPan = this.panner({ x: 3.45, y: 2.3, z: -3.2 });
-    chain(this.loopSource(this.noise.pink), filter('bandpass', 520, 0.6), filter('lowpass', 2200), L.vent, L.ventPan, bed);
+    L.ventBand = filter('bandpass', 160, 0.6);
+    L.ventFlutter = gain(1);
+    chain(this.loopSource(this.noise.pink), L.ventBand, filter('lowpass', 2200), L.ventFlutter, L.vent, L.ventPan, bed);
+    L.ventBlade = ctx.createOscillator();
+    L.ventBlade.frequency.value = 0;
+    chain(L.ventBlade, gain(0.14), L.ventFlutter.gain);
+    L.ventBlade.start();
+    chain(this.loopSource(this.noise.brown), filter('lowpass', 110), gain(0.5), L.vent);
+    this.fanSpin = 0;
 
     // Electrical hum of the station lights.
     L.hum = gain(0);
@@ -223,6 +267,17 @@ export class AudioSystem {
     chain(buzz, filter('bandpass', 3000, 6), buzzGain, L.hum);
     buzz.start();
     chain(L.hum, L.humPan, bed);
+
+    // Ballast buzz of the worn tube in the east fixture, only while it stutters.
+    L.ballast = gain(0);
+    L.ballastPan = this.panner({ x: 1.7, y: 2.88, z: 0.2 });
+    const ballast = ctx.createOscillator();
+    ballast.type = 'sawtooth';
+    ballast.frequency.value = 120;
+    chain(ballast, filter('bandpass', 2400, 3), L.ballast, L.ballastPan, bed);
+    ballast.start();
+    this.tubeLast = { a: 1, b: 1, worn: 1 };
+    this.nextTubeTick = 0;
 
     // Surveillance rack.
     L.rack = gain(0);
@@ -347,6 +402,9 @@ export class AudioSystem {
     if (!this.ready) return;
     const l = this.ctx.listener;
     const p = camera.position;
+    this.listenerPos.x = p.x;
+    this.listenerPos.y = p.y;
+    this.listenerPos.z = p.z;
     const fwd = camera.getWorldDirection(this._fwd ?? (this._fwd = camera.position.clone()));
     if (l.positionX) {
       const t = this.ctx.currentTime;
@@ -368,17 +426,27 @@ export class AudioSystem {
   /**
    * Per-frame update of continuous layers from simulation state.
    * `threat` 0..1 = proximity of the nearest active entity (radio interference).
+   * `tubes` = { a, b, worn } station tube brightness from the lighting (1 = lit).
    */
-  updateLayers(sim, dt, threat = 0, { hush = false, dread = 0 } = {}) {
+  updateLayers(sim, dt, threat = 0, { hush = false, dread = 0, tubes = null } = {}) {
     if (!this.ready) return;
     const L = this.layers;
+    this.doors.westOpen = !sim.security.isDoorClosed('WEST_DOOR');
+    this.doors.eastOpen = !sim.security.isDoorClosed('EAST_DOOR');
+    if (tubes) this.updateTubes(tubes);
     // Slow in both directions: rising over ~4 s, fading over ~6 s.
     this.ramp(L.bed.gain, hush ? 0.42 : 1, hush ? 3 : 4);
     this.ramp(L.dread.gain, Math.max(0, Math.min(1, dread)) * 0.13, dread > this.dreadLevel ? 4 : 6);
     this.dreadLevel = dread;
     const sec = sim.security;
     const powered = !sim.power.failed;
-    this.ramp(L.vent.gain, sec.fan && powered ? 0.16 : 0, 1.5);
+    // The fan spins up over a couple of seconds and runs down a little faster.
+    const fanOn = sec.fan && powered;
+    this.fanSpin += ((fanOn ? 1 : 0) - this.fanSpin) * Math.min(1, dt * (fanOn ? 0.9 : 1.4));
+    const spin = this.fanSpin;
+    this.ramp(L.vent.gain, 0.16 * Math.pow(spin, 0.75), 0.15);
+    this.ramp(L.ventBand.frequency, 160 + 360 * spin, 0.15);
+    this.ramp(L.ventBlade.frequency, 13 * spin, 0.15);
     const humLevel = !powered ? 0 : sec.stationLights === 'NORMAL' ? 1 : sec.stationLights === 'LOW' ? 0.35 : 0;
     this.ramp(L.hum.gain, humLevel, 0.8);
     this.ramp(L.rack.gain, sim.surveillance.operational ? 0.018 : 0, 0.8);
@@ -404,12 +472,69 @@ export class AudioSystem {
     }
   }
 
+  /** Flickering tubes tick as they strike and drop out; the worn one buzzes while it stutters. */
+  updateTubes(tubes) {
+    const last = this.tubeLast;
+    const now = this.ctx.currentTime;
+    for (const [key, x] of [['a', -1.7], ['b', 1.7], ['worn', 1.7]]) {
+      const v = tubes[key];
+      if (Math.abs(v - last[key]) > 0.3 && now > this.nextTubeTick) {
+        this.tubeTick({ x, y: 2.88, z: 0.2 }, v > last[key]);
+        this.nextTubeTick = now + 0.07;
+      }
+      last[key] = v;
+    }
+    this.ramp(this.layers.ballast.gain, (1 - tubes.worn) * 0.02, 0.05);
+  }
+
+  tubeTick(pos, striking) {
+    this.burst({ pos, bus: 'ambient', buffer: 'white', type: 'highpass', freq: striking ? 3800 : 2600, attack: 0.025, hold: 0, release: 0.05, peak: 0.022, reverb: 0.15 });
+  }
+
   tape(on) {
     if (!this.ready) return;
     this.ramp(this.layers.tape.gain, on ? 0.02 : 0, 0.6);
   }
 
   // ------------------------------------------------------------ one-shots
+
+  /**
+   * Sends a one-shot on its way: through the walls, doors and air between it
+   * and the listener (when it has a position), then to its bus and to the
+   * reverb of the space it is in. `dest` (the camera speaker) bypasses both.
+   */
+  route(node, { pos, bus, dest, reverb }) {
+    const ctx = this.ctx;
+    let out = node;
+    if (pos && !dest) {
+      const path = soundPath(this.listenerPos, pos, this.doors);
+      if (path.shelfDb < 0 || path.lowpass < 19000) {
+        const shelf = ctx.createBiquadFilter();
+        shelf.type = 'highshelf';
+        shelf.frequency.value = 1600;
+        shelf.gain.value = path.shelfDb;
+        const air = ctx.createBiquadFilter();
+        air.type = 'lowpass';
+        air.frequency.value = path.lowpass;
+        air.Q.value = 0.5;
+        out.connect(shelf);
+        shelf.connect(air);
+        out = air;
+      }
+    }
+    if (pos) {
+      const pan = this.panner(pos);
+      out.connect(pan);
+      out = pan;
+    }
+    out.connect(dest ?? this.buses[bus]);
+    if (reverb > 0 && !dest) {
+      const rg = ctx.createGain();
+      rg.gain.value = reverb;
+      out.connect(rg);
+      rg.connect(this.reverbs[reverbSpace(pos)]);
+    }
+  }
 
   /** Filtered noise burst with a gentle envelope. */
   burst({ pos = null, bus = 'entity', dest = null, buffer = 'white', type = 'bandpass', freq = 800, q = 1, sweepTo = null, attack = 0.03, hold = 0.05, release = 0.3, peak = 0.2, delay = 0, reverb = 0.3, rate = 1 }) {
@@ -435,19 +560,7 @@ export class AudioSystem {
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + hold + release);
     src.connect(f);
     f.connect(g);
-    let out = g;
-    if (pos) {
-      const pan = this.panner(pos);
-      g.connect(pan);
-      out = pan;
-    }
-    out.connect(dest ?? this.buses[bus]);
-    if (reverb > 0 && !dest) {
-      const rg = ctx.createGain();
-      rg.gain.value = reverb;
-      out.connect(rg);
-      rg.connect(this.reverb);
-    }
+    this.route(g, { pos, bus, dest, reverb });
     src.start(t0, Math.random() * 2);
     src.stop(t0 + attack + hold + release + 0.1);
   }
@@ -469,36 +582,50 @@ export class AudioSystem {
     g.gain.setValueAtTime(p, t0 + attack + hold);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + hold + release);
     o.connect(g);
-    let out = g;
-    if (pos) {
-      const pan = this.panner(pos);
-      g.connect(pan);
-      out = pan;
-    }
-    out.connect(dest ?? this.buses[bus]);
-    if (reverb > 0 && !dest) {
-      const rg = this.ctx.createGain();
-      rg.gain.value = reverb;
-      out.connect(rg);
-      rg.connect(this.reverb);
-    }
+    this.route(g, { pos, bus, dest, reverb });
     o.start(t0);
     o.stop(t0 + attack + hold + release + 0.1);
   }
 
   footstep(pos, { weight = 1, gain = 1, delay = 0, bus = 'entity' } = {}) {
-    this.burst({ pos, bus, buffer: 'brown', type: 'lowpass', freq: 260 + 200 / weight, q: 0.8, attack: 0.025, hold: 0.02, release: 0.22 * weight, peak: 0.22 * gain, delay, reverb: 0.4 });
-    this.tone({ pos, bus, freq: 70 / Math.sqrt(weight), sweepTo: 45, attack: 0.025, hold: 0.01, release: 0.18 * weight, peak: 0.12 * gain * weight, delay, reverb: 0.2 });
+    // No two steps quite alike: pitch and level wander a little around the
+    // subject's weight, which still sets the character.
+    const v = 0.9 + Math.random() * 0.2;
+    const g = gain * (0.88 + Math.random() * 0.24);
+    this.burst({ pos, bus, buffer: 'brown', type: 'lowpass', freq: (260 + 200 / weight) * v, q: 0.8, attack: 0.025, hold: 0.02, release: 0.22 * weight, peak: 0.22 * g, delay, reverb: 0.4 });
+    this.tone({ pos, bus, freq: (70 / Math.sqrt(weight)) * v, sweepTo: 45 * v, attack: 0.025, hold: 0.01, release: 0.18 * weight, peak: 0.12 * g * weight, delay, reverb: 0.2 });
+    // Light feet scuff as they land; heavy ones only land.
+    if (weight < 1.2) this.burst({ pos, bus, buffer: 'white', type: 'bandpass', freq: 1900 * v, q: 1.2, attack: 0.025, hold: 0.02, release: 0.09, peak: 0.03 * g, delay: delay + 0.05, reverb: 0.3 });
   }
 
   playerStep(pos) {
-    this.burst({ pos: { x: pos.x, y: 0.1, z: pos.z }, bus: 'ambient', buffer: 'brown', type: 'lowpass', freq: 520, attack: 0.025, hold: 0.01, release: 0.12, peak: 0.07, reverb: 0.15 });
+    // Alternating feet, each step a little different. The station floor is
+    // vinyl tile; the maintenance side is gritty concrete.
+    this.stepSide = !this.stepSide;
+    const v = (this.stepSide ? 1 : 0.92) * (0.94 + Math.random() * 0.12);
+    const p = { x: pos.x, y: 0.1, z: pos.z };
+    const gritty = zoneOf(p) !== 'STATION';
+    this.burst({ pos: p, bus: 'ambient', buffer: 'brown', type: 'lowpass', freq: 520 * v, attack: 0.025, hold: 0.01, release: 0.12, peak: 0.07 * (0.9 + Math.random() * 0.2), reverb: 0.15 });
+    this.burst({ pos: p, bus: 'ambient', buffer: 'white', type: 'bandpass', freq: (gritty ? 3400 : 2200) * v, q: gritty ? 0.8 : 1.6, attack: 0.025, hold: 0, release: gritty ? 0.1 : 0.05, peak: gritty ? 0.022 : 0.012, delay: 0.035, reverb: 0.1 });
   }
 
-  doorMotor(pos, gain = 1, delay = 0, bus = 'ambient') {
-    this.burst({ pos, bus, buffer: 'pink', type: 'bandpass', freq: 240, sweepTo: 420, q: 2, attack: 0.08, hold: 0.45, release: 0.3, peak: 0.14 * gain, delay, reverb: 0.3 });
-    this.tone({ pos, bus, type: 'sawtooth', freq: 85, sweepTo: 120, attack: 0.08, hold: 0.4, release: 0.25, peak: 0.03 * gain, delay, reverb: 0.1 });
-    this.burst({ pos, bus, buffer: 'brown', type: 'lowpass', freq: 160, attack: 0.04, hold: 0.02, release: 0.35, peak: 0.16 * gain, delay: delay + 0.6, reverb: 0.4 });
+  /** A station door running in its track. `closing` ends in a sealed thud; opening in a lighter clunk. */
+  doorMotor(pos, gain = 1, delay = 0, bus = 'ambient', closing = true) {
+    // Motor and gear train.
+    this.burst({ pos, bus, buffer: 'pink', type: 'bandpass', freq: closing ? 240 : 300, sweepTo: closing ? 420 : 260, q: 2, attack: 0.08, hold: 0.45, release: 0.3, peak: 0.14 * gain, delay, reverb: 0.3 });
+    this.tone({ pos, bus, type: 'sawtooth', freq: closing ? 85 : 110, sweepTo: closing ? 120 : 80, attack: 0.08, hold: 0.4, release: 0.25, peak: 0.03 * gain, delay, reverb: 0.1 });
+    // The panel rattling in its track.
+    this.burst({ pos, bus, buffer: 'white', type: 'bandpass', freq: 2600, q: 2.5, attack: 0.1, hold: 0.35, release: 0.2, peak: 0.022 * gain, delay: delay + 0.05, reverb: 0.2 });
+    const end = delay + 0.6;
+    if (closing) {
+      // Heavy seal: a thud, a short ring from the frame, a hiss of displaced air.
+      this.burst({ pos, bus, buffer: 'brown', type: 'lowpass', freq: 160, attack: 0.04, hold: 0.02, release: 0.35, peak: 0.16 * gain, delay: end, reverb: 0.4 });
+      this.tone({ pos, bus, type: 'triangle', freq: 311, sweepTo: 300, attack: 0.025, hold: 0, release: 0.6, peak: 0.016 * gain, delay: end, reverb: 0.3 });
+      this.burst({ pos, bus, buffer: 'pink', type: 'highpass', freq: 1800, attack: 0.04, hold: 0.05, release: 0.45, peak: 0.03 * gain, delay: end + 0.05, reverb: 0.2 });
+    } else {
+      this.burst({ pos, bus, buffer: 'brown', type: 'lowpass', freq: 240, attack: 0.04, hold: 0.01, release: 0.25, peak: 0.1 * gain, delay: end, reverb: 0.35 });
+      this.tone({ pos, bus, type: 'triangle', freq: 415, attack: 0.025, hold: 0, release: 0.35, peak: 0.01 * gain, delay: end, reverb: 0.3 });
+    }
   }
 
   creak(pos, gain = 1) {
@@ -524,8 +651,10 @@ export class AudioSystem {
   }
 
   whisper(pos, gain = 1) {
+    // Slightly hotter than the other cues: walls take more from a whisper
+    // than from anything else (see Acoustics.OCCLUSION_DB).
     for (let i = 0; i < 3; i++) {
-      this.burst({ pos, buffer: 'white', type: 'bandpass', freq: 2400 + Math.random() * 1600, sweepTo: 1200, q: 6, attack: 0.4, hold: 0.1, release: 0.5, peak: 0.04 * gain, delay: i * 0.35, reverb: 0.7, rate: 0.7 });
+      this.burst({ pos, buffer: 'white', type: 'bandpass', freq: 2400 + Math.random() * 1600, sweepTo: 1200, q: 6, attack: 0.4, hold: 0.1, release: 0.5, peak: 0.052 * gain, delay: i * 0.35, reverb: 0.7, rate: 0.7 });
     }
   }
 

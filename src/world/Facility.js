@@ -179,8 +179,8 @@ export class Facility {
   }
 
   /** Registers objects that only exist from a given campaign night on (NIGHT_ITEMS). */
-  nightItem(id, objects, hits) {
-    this.nightItems.push({ id, from: NIGHT_ITEMS[id], objects, hits });
+  nightItem(id, objects, hits, colliders = []) {
+    this.nightItems.push({ id, from: NIGHT_ITEMS[id], objects, hits, colliders });
   }
 
   /** Shows the documents and tapes for this campaign night; 0 hides them all. */
@@ -189,6 +189,7 @@ export class Facility {
       const on = night >= item.from;
       for (const o of item.objects) o.visible = on;
       for (const h of item.hits) h.userData.disabled = !on;
+      for (const c of item.colliders) c.enabled = on;
     }
   }
 
@@ -641,12 +642,15 @@ export class Facility {
     const telemetry = new THREE.Group();
     telemetry.position.set(7.7, 0, 11.6);
     g.add(telemetry);
-    kit.box(telemetry, 0.5, 0.9, 0.4, m.metalPaint, 0, 0.45, 0, { cast: true, collide: true });
+    // kit.box colliders use the coordinates it is given, so a box inside a
+    // positioned group needs its collider added in world space.
+    kit.box(telemetry, 0.5, 0.9, 0.4, m.metalPaint, 0, 0.45, 0, { cast: true });
+    const telemetryCollider = kit.addCollider(7.45, 7.95, 11.4, 11.8);
     kit.box(telemetry, 0.44, 0.24, 0.3, m.plastic, 0, 1.02, 0, { tile: false });
     kit.cyl(telemetry, 0.09, 0.09, 0.02, m.metalDark, -0.11, 1.15, 0, { segments: 16 });
     kit.cyl(telemetry, 0.09, 0.09, 0.02, m.metalDark, 0.11, 1.15, 0, { segments: 16 });
     kit.box(telemetry, 0.05, 0.03, 0.02, m.ledAmber, 0.17, 1.02, 0.155, { tile: false });
-    this.nightItem('log_nine', [telemetry], [this.hit('TAPE', 7.7, 1.05, 11.6, 0.55, 0.4, 0.45, { tapeId: 'log_nine' })]);
+    this.nightItem('log_nine', [telemetry], [this.hit('TAPE', 7.7, 1.05, 11.6, 0.55, 0.4, 0.45, { tapeId: 'log_nine' })], [telemetryCollider]);
     // Light.
     const lamp = new THREE.PointLight(0xd0c8a8, 16, 12, 2);
     lamp.position.set(5.9, 2.55, 9.3);

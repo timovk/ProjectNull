@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { formatGameClock } from '../core/GameClock.js';
 import { ENTITY_IDS } from '../config/GameConfig.js';
 
+// Screens are lit a little above white so the bloom gives them a soft CRT glow.
+const SCREEN_GLOW = 1.45;
+
 /**
  * Keeps every station prop in sync with the simulation: doors, buttons,
  * lamps, the wall clock, the fan, the rack, the barrier field and the three
@@ -12,7 +15,7 @@ export class StationPresenter {
     this.f = facility;
     this.settings = settings;
     this.refs = facility.refs;
-    this.feedMaterial = new THREE.MeshBasicMaterial({ map: feedRenderer.monitorRT.texture, toneMapped: false });
+    this.feedMaterial = new THREE.MeshBasicMaterial({ map: feedRenderer.monitorRT.texture, color: new THREE.Color().setScalar(SCREEN_GLOW), toneMapped: false });
     this.offMaterial = facility.m.screenOff;
     this.terminal = makeScreen(512, 384);
     this.acoustic = makeScreen(512, 384);
@@ -257,6 +260,6 @@ function makeScreen(w, h) {
   const ctx = canvas.getContext('2d');
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  const material = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false });
+  const material = new THREE.MeshBasicMaterial({ map: texture, color: new THREE.Color().setScalar(SCREEN_GLOW), toneMapped: false });
   return { canvas, ctx, texture, material, w, h };
 }

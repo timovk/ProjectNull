@@ -1,9 +1,14 @@
 import * as THREE from 'three';
 
+const TUBE_HDR = 3.4; // tube brightness above white, so the bloom picks them up
+const HAZE = 0.075;
+
 /**
  * Drives every light from simulation state plus presentation-only effects:
  * cosmetic flicker (disabled by the "disable flickering" setting and never
  * carrying gameplay information), the slow failure dim, and the morning ramp.
+ * In the station it also drives the haze, the dust, the worn east tube and
+ * the light the desk screens spill.
  */
 export class LightingController {
   constructor(facility, settings) {
@@ -11,6 +16,8 @@ export class LightingController {
     this.settings = settings;
     this.flicker = new Map(); // key -> { until, phase }
     this.nextFlickerAt = 8;
+    this.nextWornAt = 5;
+    this.wornUntil = 0;
     this.time = 0;
     this.morningColor = new THREE.Color(0xffe2b8);
     this.baseColor = new THREE.Color(0xdfe8d8);
@@ -20,6 +27,8 @@ export class LightingController {
   reset() {
     this.flicker.clear();
     this.nextFlickerAt = 8;
+    this.nextWornAt = 5;
+    this.wornUntil = 0;
     this.eased = {};
   }
 
@@ -42,6 +51,19 @@ export class LightingController {
     if (!f || time > f.until) return 1;
     const x = Math.sin(time * 61 + f.phase) * Math.sin(time * 23 + f.phase * 2);
     return x > 0.1 ? 1 : 0.25;
+  }
+
+  /** The worn east tube stutters on its own now and then: 1 = lit. */
+  wornTubeValue(time) {
+    if (this.settings.get('disableFlicker') || this.settings.get('noStartle')) return 1;
+    if (time > this.nextWornAt) {
+      this.wornUntil = time + 0.4 + Math.random() * 1.4;
+      this.wornPhase = Math.random() * 10;
+      this.nextWornAt = time + 15 + Math.random() * 40;
+    }
+    if (time > this.wornUntil) return 1;
+    const x = Math.sin(time * 47 + this.wornPhase) * Math.sin(time * 13 + this.wornPhase * 3);
+    return x > 0.2 ? 1 : x > -0.3 ? 0.45 : 0.12;
   }
 
   triggerFlicker(key, duration = 0.6, time = this.time) {
@@ -98,14 +120,30 @@ export class LightingController {
     emergency = this.ease('emergency', emergency, dt);
     const fa = this.flickerValue('stationA', time);
     const fb = this.flickerValue('stationB', time);
+    const worn = this.wornTubeValue(time);
+    const glowA = tube * fa * failDim;
+    const glowB = tube * fb * failDim;
     L.main.intensity = mainI * fa * failDim;
-    L.fill.intensity = fillI * fb * failDim;
+    L.fill.intensity = fillI * fb * (0.82 + 0.18 * worn) * failDim;
     L.emergency.intensity = emergency * (1 - failure * 0.8);
     L.emergencyLamp.material.color.setHex(emergency > 0 ? 0xff3020 : 0x222222);
-    L.fixtures[0].tubes.forEach((t) => t.material.color.setScalar(0.92 * tube * fa * failDim + 0.08));
-    L.fixtures[1].tubes.forEach((t) => t.material.color.setScalar(0.92 * tube * fb * failDim + 0.08));
-    L.monitorGlow.intensity = (sim.surveillance.operational ? 1.2 : 0.1) * failDim;
-    L.ambient.intensity = this.ease('ambient', sec.stationLights === 'EMERGENCY' ? 0.2 : sec.stationLights === 'LOW' ? 0.26 : 0.4, dt) * (1 - failure * 0.9) + morning * 0.2;
+    L.fixtures[0].tubes.forEach((t) => t.material.color.setScalar(TUBE_HDR * glowA + 0.08));
+    L.fixtures[1].tubes.forEach((t) => t.material.color.setScalar(TUBE_HDR * glowB * (t === L.worn ? 0.8 * worn : 1) + 0.08));
+    for (const [i, glow] of [glowA, glowB * (0.8 + 0.2 * worn)].entries()) {
+      const u = L.hazes[i].material.uniforms;
+      u.uStrength.value = HAZE * glow;
+      u.uTime.value = time;
+      u.uColor.value.copy(L.main.color);
+      L.motes.material.uniforms[i ? 'uBeamB' : 'uBeamA'].value.set(L.fixtures[i].group.position.x, L.fixtures[i].group.position.z, glow);
+    }
+    L.motes.material.uniforms.uTime.value = time;
+    // Screen spill shimmers faintly with the picture; the side screens go dark with the power.
+    const shimmer = 0.92 + 0.08 * Math.sin(time * 7.3) * Math.sin(time * 2.1);
+    const screensOn = !sim.power.failed ? failDim : 0;
+    L.monitorGlow.intensity = (sim.surveillance.operational ? 1.2 * shimmer : 0.1) * failDim;
+    L.terminalGlow.intensity = 0.8 * screensOn;
+    L.acousticGlow.intensity = 0.55 * shimmer * screensOn;
+    L.ambient.intensity = this.ease('ambient', sec.stationLights === 'EMERGENCY' ? 0.18 : sec.stationLights === 'LOW' ? 0.22 : 0.32, dt) * (1 - failure * 0.9) + morning * 0.2;
     const shadows = this.settings.get('shadows');
     if (L.main.castShadow !== shadows) L.main.castShadow = shadows;
 
@@ -166,6 +204,10 @@ export class LightingController {
   setQuality(quality) {
     const high = quality !== 'low';
     // Low quality removes decorative lights (one-time shader recompile).
+    const L = this.f.lights.station;
+    L.terminalGlow.visible = high;
+    L.acousticGlow.visible = high;
+    L.motes.visible = high;
     this.f.lights.pump.lamp.visible = high;
     this.f.lights.restricted.glow.visible = high;
     for (const side of ['WEST', 'EAST']) this.f.rooms[`${side}_APPROACH`].lights.corridorLamp.visible = high;

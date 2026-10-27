@@ -350,7 +350,7 @@ Settings are saved in the browser:
 - **Controls:** mouse sensitivity, invert Y, field of view.
 - **Audio:** master, ambient, entity, interface and voice volume; browser voices on or off.
 - **Display and comfort:** no-startle mode, brightness, reduced visual distortion, reduced camera motion, disable flickering lights, subtitles and textual sound cues, contextual hints, radio briefing.
-- **Graphics:** resolution scale, shadows, post-processing, lighting quality, render distance, frame-rate display.
+- **Graphics:** resolution scale, shadows, post-processing (grain, vignette and a soft bloom on tubes and screens), lighting quality (low drops the bloom, the desk-screen glow and the drifting dust), render distance, frame-rate display.
 
 Every gameplay-relevant sound has a textual cue. Flicker never carries information. All audio is synthesized with soft attacks and passes through a limiter.
 
@@ -368,7 +368,7 @@ src/
   systems/                Power, Security, Surveillance, Noise, FacilityEvents, NightProgression,
                           AudioSystem, EntitySoundscape, CameraSpeaker, VoiceSystem
   world/                  Facility, RoomBuilder, Doors, Lighting, StationPresenter,
-                          StationDressing, EntityModels, EntityPresenter, Environment
+                          StationDressing, StationAtmosphere, EntityModels, EntityPresenter, Environment
   render/                 Textures, Materials, PostFX, CameraFeedRenderer
   player/                 PlayerController, InteractionSystem, Interactions
   ui/                     MainMenu, HowItWorks, CustomNight, SettingsMenu, PauseMenu, HUD, SurveillanceUI, FacilityMap,

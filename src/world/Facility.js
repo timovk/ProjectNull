@@ -5,6 +5,7 @@ import { NIGHT_ITEMS } from '../content/Documents.js';
 import { SecurityDoor } from './Doors.js';
 import { buildRemoteRooms } from './RoomBuilder.js';
 import { dressStation } from './StationDressing.js';
+import { buildStationAtmosphere } from './StationAtmosphere.js';
 
 /**
  * Builds the playable environment (main scene) and the remote rooms that are
@@ -401,28 +402,37 @@ export class Facility {
       }
       fixtures.push({ group: g, tubes });
     }
-    const main = new THREE.SpotLight(0xdfe8d8, 30, 14, 1.25, 0.85, 2);
+    // West fixture: the key light, a shadowed spot on the desk. East fixture:
+    // a softer fill. Neither reaches the corners much.
+    const main = new THREE.SpotLight(0xdfe8d8, 30, 14, 1.2, 0.9, 2);
     main.position.set(-1.7, 2.85, 0.2);
-    main.target.position.set(-0.6, 0, -0.6);
+    main.target.position.set(-0.5, 0, -1.2);
     main.castShadow = true;
     main.shadow.mapSize.set(1024, 1024);
     main.shadow.bias = -0.0005;
     main.shadow.camera.near = 0.3;
     main.shadow.camera.far = 12;
     scene.add(main, main.target);
-    const fill = new THREE.PointLight(0xd8e4d4, 9, 14, 2);
-    fill.position.set(0.6, 2.7, -0.2);
+    const fill = new THREE.PointLight(0xd8e4d4, 9, 9, 2);
+    fill.position.set(1.7, 2.7, 0.2);
     scene.add(fill);
-    const monitorGlow = new THREE.PointLight(0x9fc4c0, 1.2, 3.2, 2);
-    monitorGlow.position.set(0, 1.25, -2.55);
-    scene.add(monitorGlow);
+    // Screen spill on the desk: CCTV feed, green status terminal, amber acoustic monitor.
+    const monitorGlow = new THREE.PointLight(0x9fc4c0, 1.2, 2.6, 2);
+    monitorGlow.position.set(0, 1.2, -2.6);
+    const terminalGlow = new THREE.PointLight(0x6cff9c, 0.8, 1.8, 2);
+    terminalGlow.position.set(-1.12, 1.08, -2.55);
+    const acousticGlow = new THREE.PointLight(0xffb060, 0.8, 1.8, 2);
+    acousticGlow.position.set(1.12, 1.08, -2.55);
+    scene.add(monitorGlow, terminalGlow, acousticGlow);
     const emergency = new THREE.PointLight(0xff3a24, 0, 16, 2);
     emergency.position.set(0, 2.7, 0.2);
     scene.add(emergency);
     const emergencyLamp = kit.box(parent, 0.3, 0.12, 0.12, m.ledOff.clone(), 0, 2.88, 3.3, { tile: false });
-    const ambient = new THREE.AmbientLight(0x8a9a96, 0.22);
+    // Bounce light: cool from the ceiling, almost nothing from the dark floor.
+    const ambient = new THREE.HemisphereLight(0x8a9a96, 0x3a3630, 0.22);
     scene.add(ambient);
-    this.lights.station = { main, fill, monitorGlow, emergency, emergencyLamp, ambient, fixtures };
+    const atmosphere = buildStationAtmosphere(parent, fixtures);
+    this.lights.station = { main, fill, monitorGlow, terminalGlow, acousticGlow, emergency, emergencyLamp, ambient, fixtures, ...atmosphere };
   }
 
   // ------------------------------------------------------------ approaches

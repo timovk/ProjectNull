@@ -919,6 +919,7 @@ export class Game {
       enabled: this.settings.get('postProcessing'),
       time,
       grain: reduced ? 0.25 : 0.55,
+      bloom: this.settings.get('lightingQuality') === 'low' ? 0 : 0.55,
       vignette: 1.05,
       chroma: reduced ? 0 : 0.0035,
       distort: echoDistort,

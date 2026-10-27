@@ -9,8 +9,45 @@ const COMMON = /* glsl */ `
   float rand(vec2 co) { return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453); }
 `;
 
+// Bloom: bright parts of the HDR frame, downsampled to quarter size...
+const BRIGHT_FRAG = /* glsl */ `
+  varying vec2 vUv;
+  uniform sampler2D tSrc;
+  uniform vec2 uTexel;
+  uniform float uThreshold, uKnee;
+  void main() {
+    vec3 c = texture2D(tSrc, vUv + uTexel * vec2(-1.0, -1.0)).rgb
+           + texture2D(tSrc, vUv + uTexel * vec2(1.0, -1.0)).rgb
+           + texture2D(tSrc, vUv + uTexel * vec2(-1.0, 1.0)).rgb
+           + texture2D(tSrc, vUv + uTexel * vec2(1.0, 1.0)).rgb;
+    c *= 0.25;
+    // One bad pixel must never be blurred across the whole frame.
+    // (min/max also drop NaN on the D3D backend, where isnan can be optimised out.)
+    if (any(isnan(c)) || any(isinf(c))) c = vec3(0.0);
+    c = min(max(c, vec3(0.0)), vec3(24.0));
+    float l = max(c.r, max(c.g, c.b));
+    gl_FragColor = vec4(c * smoothstep(uThreshold - uKnee, uThreshold + uKnee, l), 1.0);
+  }
+`;
+
+// ...then blurred with a separable 9-tap Gaussian.
+const BLUR_FRAG = /* glsl */ `
+  varying vec2 vUv;
+  uniform sampler2D tSrc;
+  uniform vec2 uStep;
+  void main() {
+    vec3 c = texture2D(tSrc, vUv).rgb * 0.2270;
+    c += (texture2D(tSrc, vUv + uStep).rgb + texture2D(tSrc, vUv - uStep).rgb) * 0.1946;
+    c += (texture2D(tSrc, vUv + uStep * 2.0).rgb + texture2D(tSrc, vUv - uStep * 2.0).rgb) * 0.1216;
+    c += (texture2D(tSrc, vUv + uStep * 3.0).rgb + texture2D(tSrc, vUv - uStep * 3.0).rgb) * 0.0541;
+    c += (texture2D(tSrc, vUv + uStep * 4.0).rgb + texture2D(tSrc, vUv - uStep * 4.0).rgb) * 0.0162;
+    gl_FragColor = vec4(c, 1.0);
+  }
+`;
+
 /**
  * Lightweight post-processing without extra dependencies.
+ *  - bloom: a soft glow around tubes, screens and lamps (quarter size).
  *  - main pass: film grain, vignette, subtle chromatic aberration, slow
  *    distortion (failure sequences only), desaturation and tint.
  *  - feed pass: CCTV look (monochrome, scanlines, noise, signal loss).
@@ -26,10 +63,25 @@ export class PostFX {
     this.quad.frustumCulled = false;
     this.quadScene = new THREE.Scene();
     this.quadScene.add(this.quad);
+    const bloomRT = () => new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
+    this.bloomA = bloomRT();
+    this.bloomB = bloomRT();
+    this.brightMaterial = new THREE.ShaderMaterial({
+      uniforms: { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() }, uThreshold: { value: 1.1 }, uKnee: { value: 0.5 } },
+      vertexShader: QUAD_VERT,
+      fragmentShader: BRIGHT_FRAG
+    });
+    this.blurMaterial = new THREE.ShaderMaterial({
+      uniforms: { tSrc: { value: null }, uStep: { value: new THREE.Vector2() } },
+      vertexShader: QUAD_VERT,
+      fragmentShader: BLUR_FRAG
+    });
 
     this.mainMaterial = new THREE.ShaderMaterial({
       uniforms: {
         tDiffuse: { value: null },
+        tBloom: { value: null },
+        uBloom: { value: 0 },
         uTime: { value: 0 },
         uRes: { value: new THREE.Vector2(1, 1) },
         uGrain: { value: 0.5 },
@@ -42,8 +94,8 @@ export class PostFX {
       vertexShader: QUAD_VERT,
       fragmentShader: /* glsl */ `
         varying vec2 vUv;
-        uniform sampler2D tDiffuse;
-        uniform float uTime, uGrain, uVignette, uChroma, uDistort, uDesat;
+        uniform sampler2D tDiffuse, tBloom;
+        uniform float uTime, uGrain, uVignette, uChroma, uDistort, uDesat, uBloom;
         uniform vec2 uRes;
         uniform vec3 uTint;
         ${COMMON}
@@ -60,6 +112,7 @@ export class PostFX {
           col.r = texture2D(tDiffuse, uv + dir * ca).r;
           col.g = texture2D(tDiffuse, uv).g;
           col.b = texture2D(tDiffuse, uv - dir * ca).b;
+          col += texture2D(tBloom, uv).rgb * uBloom;
           float lum = dot(col, vec3(0.299, 0.587, 0.114));
           col = mix(col, vec3(lum), uDesat);
           col *= uTint;
@@ -129,6 +182,10 @@ export class PostFX {
   setSize(width, height) {
     this.size.set(width, height);
     this.sceneRT.setSize(width, height);
+    const bw = Math.max(1, Math.round(width / 4));
+    const bh = Math.max(1, Math.round(height / 4));
+    this.bloomA.setSize(bw, bh);
+    this.bloomB.setSize(bw, bh);
     this.mainMaterial.uniforms.uRes.value.set(width, height);
   }
 
@@ -141,8 +198,12 @@ export class PostFX {
     }
     r.setRenderTarget(this.sceneRT);
     r.render(scene, camera);
+    const bloom = params.bloom ?? 0;
+    if (bloom > 0) this.renderBloom();
     const u = this.mainMaterial.uniforms;
     u.tDiffuse.value = this.sceneRT.texture;
+    u.tBloom.value = this.bloomA.texture;
+    u.uBloom.value = bloom;
     u.uTime.value = params.time;
     u.uGrain.value = params.grain;
     u.uVignette.value = params.vignette;
@@ -153,6 +214,30 @@ export class PostFX {
     this.quad.material = this.mainMaterial;
     r.setRenderTarget(null);
     r.render(this.quadScene, this.quadCam);
+  }
+
+  /** Bright pass into bloomA, then two widening blur rounds (A -> B -> A). */
+  renderBloom() {
+    const r = this.renderer;
+    const { width, height } = this.bloomA;
+    const b = this.brightMaterial.uniforms;
+    b.tSrc.value = this.sceneRT.texture;
+    b.uTexel.value.set(1 / this.size.x, 1 / this.size.y);
+    this.quad.material = this.brightMaterial;
+    r.setRenderTarget(this.bloomA);
+    r.render(this.quadScene, this.quadCam);
+    const u = this.blurMaterial.uniforms;
+    this.quad.material = this.blurMaterial;
+    for (const spread of [1, 2]) {
+      u.tSrc.value = this.bloomA.texture;
+      u.uStep.value.set(spread / width, 0);
+      r.setRenderTarget(this.bloomB);
+      r.render(this.quadScene, this.quadCam);
+      u.tSrc.value = this.bloomB.texture;
+      u.uStep.value.set(0, spread / height);
+      r.setRenderTarget(this.bloomA);
+      r.render(this.quadScene, this.quadCam);
+    }
   }
 
   /** Draws a feed texture with the CCTV shader into `target` (null = screen). */
@@ -187,6 +272,10 @@ export class PostFX {
 
   dispose() {
     this.sceneRT.dispose();
+    this.bloomA.dispose();
+    this.bloomB.dispose();
+    this.brightMaterial.dispose();
+    this.blurMaterial.dispose();
     this.mainMaterial.dispose();
     this.feedMaterial.dispose();
   }
